@@ -1224,7 +1224,7 @@ class find_all_intersections_mixed_kdtree_ray_observer : public mixed_kdtree_ray
                  const std::size_t dataSize );
 };
 
-constexpr std::size_t staticDataSize{ 80 };
+std::size_t staticDataSize = 80;
 
 /**
  *  Holds information about points on objects in the kd-tree.

@@ -12,8 +12,6 @@
 
 // Forward declarations
 
-class half;
-
 namespace frantic {
 namespace graphics {
 

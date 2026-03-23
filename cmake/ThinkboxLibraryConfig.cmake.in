@@ -1,0 +1,34 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+find_dependency(PkgConfig)
+pkg_check_modules(LIBB2 REQUIRED IMPORTED_TARGET libb2)
+find_dependency(Boost)
+find_dependency(BZip2)
+find_dependency(Eigen3 CONFIG)
+find_dependency(glog)
+find_dependency(OpenEXR)
+find_dependency(ZLIB)
+pkg_check_modules(TINYXML REQUIRED IMPORTED_TARGET tinyxml)
+find_dependency(utf8cpp)
+pkg_check_modules(XXHASH REQUIRED IMPORTED_TARGET libxxhash)
+
+if(@BUILD_WITH_TBB@)
+    find_dependency(TBB)
+endif()
+
+if(UNIX AND NOT APPLE)
+    find_dependency(ICU COMPONENTS uc i18n)
+endif()
+
+if(@BUILD_WITH_E57@)
+    pkg_check_modules(XERCESC REQUIRED IMPORTED_TARGET xerces-c)
+    pkg_check_modules(E57FORMAT REQUIRED IMPORTED_TARGET libe57format)
+endif()
+
+if(@BUILD_WITH_LZ4@)
+    find_dependency(lz4)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/ThinkboxLibraryTargets.cmake")

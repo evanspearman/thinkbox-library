@@ -172,7 +172,7 @@ class trimesh3 {
         size_t currentNumVerts = m_vertices.size();
         m_vertices.resize( currentNumVerts + vertices.size() );
 
-        memcpy( &m_vertices[currentNumVerts], &vertices[0], vertices.size() * sizeof( vector3f ) );
+        std::copy(vertices.begin(), verticies.end(), m_vertices.begin() + currentNumVerts);
     }
 
     /**

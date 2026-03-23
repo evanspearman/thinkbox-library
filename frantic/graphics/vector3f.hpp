@@ -59,6 +59,8 @@ class vector3t {
         // I changed these to floats and it worked.
     }
 
+    vector3t(const vector3t&) = default;
+
     /** Implicit conversion from smaller float type is allowed. */
     template <class OtherFloatType>
     vector3t( const vector3t<OtherFloatType>& t,

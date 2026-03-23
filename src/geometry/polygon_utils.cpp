@@ -57,37 +57,37 @@ bool point_on_polygon_bound_raycast_impl( const std::vector<VectorType>& polygon
     return false;
 }
 
-template <>
-bool point_on_polygon_bound_raycast_impl<frantic::graphics2d::vector2>(
-    const std::vector<frantic::graphics2d::vector2>& polygon, const frantic::graphics2d::vector2& point,
-    int tolerance ) {
-    size_t j = polygon.size() - 1;
+// template <>
+// bool point_on_polygon_bound_raycast_impl<frantic::graphics2d::vector2>(
+//     const std::vector<frantic::graphics2d::vector2>& polygon, const frantic::graphics2d::vector2& point,
+//     int tolerance ) {
+//     size_t j = polygon.size() - 1;
 
-    for( size_t i = 0; i < polygon.size(); ++i ) {
+//     for( size_t i = 0; i < polygon.size(); ++i ) {
 
-        if( ( polygon[i].y <= point.y && polygon[j].y >= point.y ) ||
-            ( polygon[j].y <= point.y && polygon[i].y >= point.y ) ) {
-            const int rise = polygon[i].y - polygon[j].y;
-            const int run = polygon[i].x - polygon[j].x;
+//         if( ( polygon[i].y <= point.y && polygon[j].y >= point.y ) ||
+//             ( polygon[j].y <= point.y && polygon[i].y >= point.y ) ) {
+//             const int rise = polygon[i].y - polygon[j].y;
+//             const int run = polygon[i].x - polygon[j].x;
 
-            if( frantic::math::get_absolute( rise ) > tolerance ) {
-                const int intersectionPoint = polygon[i].x + ( ( run * ( point.y - polygon[i].y ) ) / rise );
-                if( intersectionPoint == point.x ) {
-                    return true;
-                }
-            } else if( frantic::math::get_absolute( polygon[i].y - polygon[j].y ) <= tolerance &&
-                       frantic::math::get_absolute( polygon[i].y - point.y ) <= tolerance &&
-                       ( ( polygon[i].x <= point.x && polygon[j].x >= point.x ) ||
-                         ( polygon[j].x <= point.x && polygon[i].x >= point.x ) ) ) {
-                return true;
-            }
-        }
+//             if( frantic::math::get_absolute( rise ) > tolerance ) {
+//                 const int intersectionPoint = polygon[i].x + ( ( run * ( point.y - polygon[i].y ) ) / rise );
+//                 if( intersectionPoint == point.x ) {
+//                     return true;
+//                 }
+//             } else if( frantic::math::get_absolute( polygon[i].y - polygon[j].y ) <= tolerance &&
+//                        frantic::math::get_absolute( polygon[i].y - point.y ) <= tolerance &&
+//                        ( ( polygon[i].x <= point.x && polygon[j].x >= point.x ) ||
+//                          ( polygon[j].x <= point.x && polygon[i].x >= point.x ) ) ) {
+//                 return true;
+//             }
+//         }
 
-        j = i;
-    }
+//         j = i;
+//     }
 
-    return false;
-}
+//     return false;
+// }
 
 template <typename VectorType>
 boundary_relation::boundary_relation point_in_polygon_raycast_impl( const std::vector<VectorType>& polygon,

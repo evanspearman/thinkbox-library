@@ -32,6 +32,7 @@ class vector2f : public vector2t<float, vector2f> {
         : vector2t<float, vector2f>( vec[0], vec[1] ) {}
     vector2f( const vector2f& v )
         : vector2t<float, vector2f>( v.x, v.y ) {}
+    vector2f& operator=(const vector2f&) = default;
 
     // TODO: We should use the boost random number generator for high quality and fast random numbers
     static vector2f from_random() { return vector2f( (float)rand() / RAND_MAX, (float)rand() / RAND_MAX ); }

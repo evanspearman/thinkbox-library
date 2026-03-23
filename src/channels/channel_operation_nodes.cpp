@@ -2300,7 +2300,7 @@ struct ray_intersect_node_impl : public code_gen<2> {
         const graphics::vector3f& inputDir = *reinterpret_cast<graphics::vector3f*>( stack + pData->m_srcIndex[1] );
 
         geometry_query_result& result = *reinterpret_cast<geometry_query_result*>( stack + pData->m_destIndex );
-        memset( &result, 0, sizeof( channels::geometry_query_result ) );
+        result = {};
 
         graphics::ray3f queryRay( inputPos, inputDir );
         geometry::raytrace_intersection raytraceResult;
@@ -2377,7 +2377,7 @@ struct nearest_point_node_impl : public code_gen<1> {
         const graphics::vector3f& inputPos = *reinterpret_cast<graphics::vector3f*>( stack + pData->m_srcIndex[0] );
 
         geometry_query_result& result = *reinterpret_cast<geometry_query_result*>( stack + pData->m_destIndex );
-        memset( &result, 0, sizeof( channels::geometry_query_result ) );
+        result = {};
 
         geometry::nearest_point_search_result npsResult;
 
