@@ -823,15 +823,6 @@ struct process_particles_in_range_body {
     void* m_userData;
     particle_grid_tree::particle_evaluation_function_t m_evaluationFunction;
 
-#if defined( _MSC_VER )
-#pragma warning( push )
-#pragma warning( disable : 4822 ) // local class member function does not have a body
-#endif
-    process_particles_in_range_body& operator=( process_particles_in_range_body& ); // not implemented
-#if defined( _MSC_VER )
-#pragma warning( pop )
-#endif
-
     process_particles_in_range_body(
         const std::size_t particleSize,
         const frantic::channels::channel_accessor<frantic::graphics::vector3f>& positionAccessor,

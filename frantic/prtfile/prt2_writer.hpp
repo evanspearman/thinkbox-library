@@ -12,18 +12,6 @@
 #include <frantic/logging/progress_logger.hpp>
 #include <frantic/prtfile/prt2_common.hpp>
 
-#include <tbb/task_scheduler_init.h>
-#include <tbb/tbb_exception.h>
-#pragma warning( push )
-#pragma warning( disable : 4100 4512 )
-#include <tbb/pipeline.h>
-#pragma warning( pop )
-
-// Forward declaration
-namespace tbb {
-class filter;
-}
-
 namespace frantic {
 namespace prtfile {
 
@@ -51,7 +39,7 @@ class prt2_writer {
      * This class is public as classes that use the prt2_writer and manually initialize their pipeline need to be aware
      * of it.
      */
-    class chunk_writer : public tbb::filter, boost::noncopyable {
+    class chunk_writer : boost::noncopyable {
         prt2_writer& m_writer;
 
         std::ostream& m_outputStream;
@@ -85,8 +73,7 @@ class prt2_writer {
                       const frantic::tstring& particleStreamName, bool usePositionOffset,
                       prt2_compression_t compressionScheme, boost::uint64_t totalParticleCount,
                       logging::progress_logger& progress )
-            : tbb::filter( true )
-            , m_writer( writer )
+            : m_writer( writer )
             , m_outputStream( outputStream )
             , m_fileStreamName( fileStreamName )
             , m_particleStreamName( particleStreamName )
@@ -114,9 +101,9 @@ class prt2_writer {
         particle_chunk()
             : particleCount( 0 )
             , uncompressed()
-            , compressed()
             , positionOffset()
-            , usePositionOffset( false ) {}
+            , usePositionOffset( false )
+            , compressed() {}
 
         // These fields are initialized by the chunk generator.
         boost::uint64_t particleCount;     // The number of particles in the chunk.

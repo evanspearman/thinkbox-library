@@ -5,6 +5,7 @@
 #include <boost/cstdint.hpp>
 
 #include <frantic/simd/detect.hpp>
+#include <half.h>
 
 #ifdef FRANTIC_HAS_SSE2
 #include <emmintrin.h>

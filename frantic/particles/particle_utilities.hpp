@@ -561,29 +561,29 @@ void load_test_particles( tinyxml2::XMLHandle xml, ParticleContainerType& outPar
 // This parses the scene xml, and loads whatever type of particles are specified in the
 // scene.  The particle fraction specifies what fraction of the total particles to actually load, and can be used
 // for viewport previews or low quality test renders.
-template <class ParticleContainerType>
-void load_particles_from_scene( tinyxml2::XMLHandle sceneXml, ParticleContainerType& outParticles, float particleFraction,
-                                boost::int64_t particleLimit, frantic::logging::progress_logger& progress ) {
-    typedef typename ParticleContainerType::value_type ParticleType;
+// template <class ParticleContainerType>
+// void load_particles_from_scene( tinyxml2::XMLHandle sceneXml, ParticleContainerType& outParticles, float particleFraction,
+//                                 boost::int64_t particleLimit, frantic::logging::progress_logger& progress ) {
+//     typedef typename ParticleContainerType::value_type ParticleType;
 
-    /////// Load any particle reflow particle simulations ///////
+//     /////// Load any particle reflow particle simulations ///////
 
-    // First count how many particles there are
-    boost::shared_ptr<streams::particle_istream> pin = get_flood_reflow_istream( sceneXml );
-    // Load a fraction of the particles if requested
-    if( particleFraction < 1 || particleLimit < pin->particle_count() ) {
-        pin = boost::shared_ptr<streams::particle_istream>(
-            new streams::fractional_particle_istream( pin, particleFraction, particleLimit ) );
-    }
+//     // First count how many particles there are
+//     boost::shared_ptr<streams::particle_istream> pin = get_flood_reflow_istream( sceneXml );
+//     // Load a fraction of the particles if requested
+//     if( particleFraction < 1 || particleLimit < pin->particle_count() ) {
+//         pin = boost::shared_ptr<streams::particle_istream>(
+//             new streams::fractional_particle_istream( pin, particleFraction, particleLimit ) );
+//     }
 
-    load_particles_from_stream( *pin, outParticles, progress );
-    tinyxml2::XMLHandle testHandle = sceneXml.FirstChildElement( "testParticles" );
-    while( testHandle.ToNode() != nullptr ) {
-        load_test_particles( testHandle, outParticles, particleFraction );
+//     load_particles_from_stream( *pin, outParticles, progress );
+//     tinyxml2::XMLHandle testHandle = sceneXml.FirstChildElement( "testParticles" );
+//     while( testHandle.ToNode() != nullptr ) {
+//         load_test_particles( testHandle, outParticles, particleFraction );
 
-        testHandle = testHandle.ToNode()->NextSiblingElement( "testParticles" );
-    }
-}
+//         testHandle = testHandle.ToNode()->NextSiblingElement( "testParticles" );
+//     }
+// }
 
 /**
  * Takes a vector of splines and a time offset vector of splines and writes particles to a stream that represent the
@@ -686,11 +686,8 @@ inline void load_splines_from_stream( boost::shared_ptr<streams::particle_istrea
     std::vector<std::vector<vector3f>>::iterator outSplineIter1 = outSplinesTimeOffset.begin();
     boost::unordered_map<int, std::map<int, detail::knot_data>>::const_iterator inSplineIter,
         inSplineIterEnd = inSplines.end();
-#pragma warning( push )
-#pragma warning( disable : 4913 )
     for( inSplineIter = inSplines.begin(); inSplineIter != inSplineIterEnd;
          ++inSplineIter, ++outSplineIter0, ++outSplineIter1 ) {
-#pragma warning( pop )
         const std::map<int, detail::knot_data>& inSpline = inSplineIter->second;
         int numKnots = static_cast<int>( inSpline.size() );
         outSplineIter0->reserve( numKnots );
@@ -793,8 +790,6 @@ class morton_sorter {
     frantic::channels::channel_accessor<frantic::graphics::vector3f>& positionAccessor;
     frantic::graphics::vector3f boundingBoxCorner;
     float voxelLength;
-
-    morton_sorter& operator=( const morton_sorter& ); // Disable assignment.
 
   public:
     morton_sorter( frantic::channels::channel_accessor<frantic::graphics::vector3f>& positionAccessor,

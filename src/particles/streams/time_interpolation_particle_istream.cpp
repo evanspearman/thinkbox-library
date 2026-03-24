@@ -291,10 +291,10 @@ void frantic::particles::streams::time_interpolation_particle_istream::sort_othe
 frantic::particles::streams::time_interpolation_particle_istream::time_interpolation_particle_istream(
     boost::shared_ptr<particle_istream> mainPin, boost::shared_ptr<particle_istream> otherTimePin,
     float timeStepSeconds, float interpVal )
-    : m_interpVal( interpVal )
+    : delegated_particle_istream( mainPin )
+    , m_interpVal( interpVal )
     , m_timeStepSeconds( timeStepSeconds )
-    , m_forceExtrapolation( false )
-    , delegated_particle_istream( mainPin ) {
+    , m_forceExtrapolation( false ) {
 
     m_offsetSeconds = ( interpVal * timeStepSeconds );
 
@@ -316,10 +316,10 @@ frantic::particles::streams::time_interpolation_particle_istream::time_interpola
 frantic::particles::streams::time_interpolation_particle_istream::time_interpolation_particle_istream(
     boost::shared_ptr<particle_istream> mainPin, frantic::particles::particle_array interpParticles,
     float timeStepSeconds, float interpVal )
-    : m_interpVal( interpVal )
+    : delegated_particle_istream( mainPin )
+    , m_interpVal( interpVal )
     , m_timeStepSeconds( timeStepSeconds )
-    , m_forceExtrapolation( false )
-    , delegated_particle_istream( mainPin ) {
+    , m_forceExtrapolation( false ) {
 
     m_offsetSeconds = ( interpVal * timeStepSeconds );
 

@@ -8,10 +8,7 @@
 #include <boost/math/special_functions/pow.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/unordered_set.hpp>
-#pragma warning( push, 3 )
-#pragma warning( disable : 4913 )
 #include <boost/thread.hpp>
-#pragma warning( pop )
 
 #include <frantic/simd/float_v.hpp>
 #include <frantic/simd/int_v.hpp>
@@ -20,13 +17,9 @@
 #include <frantic/math/eigen.hpp>
 #include <frantic/volumetrics/implicitsurface/particle_implicit_surface_policies.hpp>
 #include <frantic/volumetrics/run_tree.hpp>
-//#include <frantic/diagnostics/profiling_manager.hpp>
 
-#pragma warning( push )
-#pragma warning( disable : 4512 4100 )
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
-#pragma warning( pop )
 
 using namespace std;
 using namespace frantic;
@@ -40,10 +33,6 @@ using namespace frantic::channels;
 namespace frantic {
 namespace volumetrics {
 namespace implicitsurface {
-
-// frantic::diagnostics::profiling_manager sparsePM;
-
-// shared_progress_logger_adapter implementation
 
 std::pair<int, std::string>
 shared_progress_logger_adapter::progress_logger_adapter_threadproc( boost::function<void( void )>& f ) {
@@ -471,12 +460,12 @@ struct density_user_data {
                        const frantic::channels::channel_accessor<frantic::graphics::vector3f>& positionAccessor,
                        const frantic::channels::channel_accessor<float>& radiusAccessor, float implicitThreshold,
                        float particleRadiusToEffectRadiusScale = 0, float h = 0, bool gradient = false )
-        : worldLocation( worldLocation )
-        , positionAccessor( positionAccessor )
+        : getGradient( gradient )
+        , worldLocation( worldLocation )
         , radiusAccessor( radiusAccessor )
-        , h( h )
+        , positionAccessor( positionAccessor )
         , particleRadiusToEffectRadiusScale( particleRadiusToEffectRadiusScale )
-        , getGradient( gradient ) {
+        , h( h ) {
 
         densities[0] = implicitThreshold;
         if( gradient )
@@ -822,9 +811,6 @@ class union_of_spheres_populate_vertex_channels {
     const std::vector<frantic::channels::channel_general_accessor>& inputChannels;
     const particle_union_of_spheres_is_policy* isp;
 
-    union_of_spheres_populate_vertex_channels&
-    operator=( const union_of_spheres_populate_vertex_channels& ); // not implemented
-
   public:
     union_of_spheres_populate_vertex_channels(
         std::vector<frantic::geometry::trimesh3_vertex_channel_general_accessor>& outputChannels,
@@ -912,8 +898,8 @@ particle_union_of_spheres_is_policy::particle_union_of_spheres_is_policy(
     , m_maximumParticleRadius( maximumParticleRadius )
     , m_particleRadiusToEffectRadiusScale( particleRadiusToEffectRadiusScale )
     , m_implicitThreshold( implicitThreshold )
-    , m_meshingVCS( meshingVCS )
-    , m_vertexRefinement( vertexRefinement ) {
+    , m_vertexRefinement( vertexRefinement )
+    , m_meshingVCS( meshingVCS ) {
     m_positionAccessor = m_particles.get_channel_map().get_accessor<vector3f>( _T("Position") );
     m_radiusAccessor = m_particles.get_channel_map().get_accessor<float>( _T("Radius") );
 
@@ -1405,7 +1391,6 @@ void particle_union_of_spheres_is_policy::fill_sparse_channel_data( const franti
     boundbox3f worldSearchBox( xyzExtents );
     worldSearchBox.expand( m_maximumParticleRadius * m_particleRadiusToEffectRadiusScale );
 
-    data.mutexes;
     data.mutexes.reset( new tbb::spin_mutex[xyExtents.ysize()] );
     data.useMutexes = true;
 #ifndef FRANTIC_DISABLE_THREADS
@@ -1965,8 +1950,6 @@ class metaball_populate_vertex_channels {
     const particle_metaball_is_policy* isp;
     const channel_map_weighted_sum& channelMapWeightedSum;
 
-    metaball_populate_vertex_channels& operator=( const metaball_populate_vertex_channels& ); // not implemented
-
   public:
     metaball_populate_vertex_channels(
         std::vector<frantic::geometry::trimesh3_vertex_channel_general_accessor>& outputChannels,
@@ -2059,8 +2042,8 @@ particle_metaball_is_policy::particle_metaball_is_policy( particle_grid_tree& pa
     , m_maximumParticleRadius( maximumParticleRadius )
     , m_particleRadiusToEffectRadiusScale( particleRadiusToEffectRadiusScale )
     , m_implicitThreshold( implicitThreshold )
-    , m_meshingVCS( meshingVCS )
-    , m_vertexRefinement( vertexRefinement ) {
+    , m_vertexRefinement( vertexRefinement )
+    , m_meshingVCS( meshingVCS ) {
     m_positionAccessor = m_particles.get_channel_map().get_accessor<vector3f>( _T("Position") );
     m_radiusAccessor = m_particles.get_channel_map().get_accessor<float>( _T("Radius") );
 
@@ -2866,7 +2849,7 @@ void particle_metaball_is_policy::populate_vertex_channels(
     std::vector<frantic::geometry::trimesh3_vertex_channel_general_accessor>& outputChannels, size_t vertIndex,
     const frantic::graphics::vector3f& vert, const std::vector<char*>& particlesInRange, vertex_workspace_t& workspace,
     const frantic::channels::channel_map_weighted_sum& channelMapWeightedSum ) const {
-    typedef vertex_workspace_t::particles_t particles_t;
+    [[maybe_unused]] typedef vertex_workspace_t::particles_t particles_t;
     vector<float>& sampleWeights = workspace.sampleWeights;
 
     get_sample_weights( vert, particlesInRange, sampleWeights );
@@ -2934,8 +2917,8 @@ inline float_v zhu_bridson_kernel_inv_support( float_v distanceSquared, float_v 
 namespace detail {
 
 zhu_bridson_sparse_data::zhu_bridson_sparse_data()
-    : useIsInitializedVoxel( false )
-    , useSimd( false ) {}
+    : useSimd( false )
+    , useIsInitializedVoxel( false ) {}
 
 void zhu_bridson_sparse_data::reset_for_dense_plane_evaluation(
     const frantic::channels::channel_accessor<frantic::graphics::vector3f>& positionAccessor,
@@ -3033,8 +3016,8 @@ struct zhu_bridson_density_user_data {
         : worldLocation( worldLocation )
         , radiusAccessor( radiusAccessor )
         , positionAccessor( positionAccessor )
-        , kernelCompactSupportSquared( kernelCompactSupportSquared )
         , h( h )
+        , kernelCompactSupportSquared( kernelCompactSupportSquared )
         , getGradient( getGradient ) {
         for( int i = 0; i < 6; i++ ) {
             blendedRadius[i] = 0;
@@ -3226,7 +3209,7 @@ class zhu_bridson_sparse_contribution_simd_evaluator
   private:
     float m_particleEffectRadiusSquared;
     float m_invParticleEffectRadiusSquared;
-    int m_gridParticleChannel;
+    [[maybe_unused]] int m_gridParticleChannel;
     detail::zhu_bridson_grid_particle_simd* m_gridParticles;
 };
 
@@ -3309,13 +3292,13 @@ class zhu_bridson_vert_refine_eval {
         const int solveAxis, char** particlesBegin, char** particlesEnd,
         const frantic::channels::channel_accessor<frantic::graphics::vector3f>& positionAccessor,
         const frantic::channels::channel_accessor<float>& radiusAccessor, float kernelCompactSupport )
-        : m_zhuBridsonPolicy( zhuBridsonPolicy )
-        , m_voxelPosition0( voxelCoord0 )
+        : m_voxelPosition0( voxelCoord0 )
         , m_solveAxis( solveAxis )
         , m_particlesBegin( particlesBegin )
         , m_particlesEnd( particlesEnd )
         , m_positionAccessor( positionAccessor )
-        , m_radiusAccessor( radiusAccessor ) {
+        , m_radiusAccessor( radiusAccessor )
+        , m_zhuBridsonPolicy( zhuBridsonPolicy ) {
         m_kernelCompactSupportSquared = boost::math::pow<2>( kernelCompactSupport );
         m_invKernelCompactSupportSquared = 1.f / m_kernelCompactSupportSquared;
     }
@@ -3477,8 +3460,6 @@ class zhu_bridson_populate_vertex_channels {
     const particle_zhu_bridson_is_policy* isp;
     const channel_map_weighted_sum& channelMapWeightedSum;
 
-    zhu_bridson_populate_vertex_channels& operator=( const zhu_bridson_populate_vertex_channels& ); // not implemented
-
   public:
     zhu_bridson_populate_vertex_channels(
         std::vector<frantic::geometry::trimesh3_vertex_channel_general_accessor>& outputChannels,
@@ -3518,12 +3499,12 @@ particle_zhu_bridson_is_policy::particle_zhu_bridson_is_policy( particle_grid_tr
                                                                 const voxel_coord_system& meshingVCS,
                                                                 int vertexRefinement )
     : particle_is_policy_base<particle_zhu_bridson_is_policy>( particles )
-    , m_maximumParticleRadius( maxParticleRadius )
     , m_kernelCompactSupport( maxParticleRadius * effectRadius )
+    , m_maximumParticleRadius( maxParticleRadius )
     , m_lowDensityTrimmingDensity( lowDensityTrimmingDensity )
     , m_lowDensityTrimmingStrength( lowDensityTrimmingStrength )
-    , m_meshingVCS( meshingVCS )
-    , m_vertexRefinement( vertexRefinement ) {
+    , m_vertexRefinement( vertexRefinement )
+    , m_meshingVCS( meshingVCS ) {
 
     m_positionAccessor = m_particles.get_channel_map().get_accessor<vector3f>( _T("Position") );
     m_radiusAccessor = m_particles.get_channel_map().get_accessor<float>( _T("Radius") );
@@ -3718,11 +3699,6 @@ struct GridEvaluationToDensityBody {
     float* m_outVoxelCornerValues;
     int m_z;
 
-#pragma warning( push )
-#pragma warning( disable : 4822 ) // local class member function does not have a body
-    GridEvaluationToDensityBody& operator=( const GridEvaluationToDensityBody& ); // not implemented
-#pragma warning( pop )
-
     void operator()( const tbb::blocked_range<int>& r ) const {
         int index = ( r.begin() - m_xyExtents.minimum().y ) * m_xyExtents.xsize();
         const boost::uint8_t* isInitializedVoxel = m_isInitializedVoxel.size() > 0 ? &m_isInitializedVoxel[0] : 0;
@@ -3756,10 +3732,10 @@ struct GridEvaluationToDensityBody {
                                  float* outVoxelCornerValues )
         : m_isp( isp )
         , m_xyExtents( xyExtents )
-        , m_z( z )
         , m_isInitializedVoxel( isInitializedVoxel )
         , m_gridEvaluation( gridEvaluation )
-        , m_outVoxelCornerValues( outVoxelCornerValues ) {}
+        , m_outVoxelCornerValues( outVoxelCornerValues )
+        , m_z( z ) {}
 };
 
 void particle_zhu_bridson_is_policy::get_density_from_grid_evaluation_mt(
@@ -3865,9 +3841,6 @@ struct get_density_from_grid_evaluation_simd_mt_body {
     float* m_outVoxelCornerValues;
     int m_z;
 
-    get_density_from_grid_evaluation_simd_mt_body&
-    operator=( const get_density_from_grid_evaluation_simd_mt_body& ); // not implemented
-
     void operator()( const tbb::blocked_range<int>& r ) const {
         boundbox3 xyzExtents( vector3( m_xyExtents.minimum().x, r.begin(), m_z ),
                               vector3( m_xyExtents.maximum().x, r.end() - 1, m_z ) );
@@ -3882,10 +3855,10 @@ struct get_density_from_grid_evaluation_simd_mt_body {
         const std::vector<detail::zhu_bridson_grid_particle_simd>& gridEvaluation, float* outVoxelCornerValues )
         : m_isp( isp )
         , m_xyExtents( xyExtents )
-        , m_z( z )
         , m_isInitializedVoxel( isInitializedVoxel )
         , m_gridEvaluation( gridEvaluation )
-        , m_outVoxelCornerValues( outVoxelCornerValues ) {}
+        , m_outVoxelCornerValues( outVoxelCornerValues )
+        , m_z( z ) {}
 };
 
 } // anonymous namespace
@@ -4752,13 +4725,13 @@ struct anistropic_density_user_data {
         const frantic::channels::channel_accessor<frantic::graphics::vector3f>& positionAccessor,
         const frantic::channels::channel_general_accessor& anisotropyAccessor, float implicitThreshold, float h = 0,
         bool getGradient = false )
-        : worldLocation( worldLocation )
+        : getGradient( getGradient )
+        , worldLocation( worldLocation )
         , volumeAccessor( volumeAccessor )
         , invCompactSupportVolumeAccessor( invCompactSupportVolumeAccessor )
         , positionAccessor( positionAccessor )
         , anisotropyAccessor( anisotropyAccessor )
         , implicitThreshold( implicitThreshold )
-        , getGradient( getGradient )
         , h( h ) {
 
         densities[0] = implicitThreshold;
@@ -4865,11 +4838,11 @@ class anisotropic_vert_refine_eval {
     anisotropic_vert_refine_eval( const particle_anisotropic_is_policy& anisotropicPolicy,
                                   const frantic::graphics::vector3f& voxelCoord0, const int solveAxis,
                                   char** particlesBegin, char** particlesEnd )
-        : m_anisotropicPolicy( anisotropicPolicy )
-        , m_voxelPosition0( voxelCoord0 )
+        : m_voxelPosition0( voxelCoord0 )
         , m_solveAxis( solveAxis )
         , m_particlesBegin( particlesBegin )
-        , m_particlesEnd( particlesEnd ) {}
+        , m_particlesEnd( particlesEnd )
+        , m_anisotropicPolicy( anisotropicPolicy ) {}
 
     float operator()( float x ) const {
         vector3f vertTest( m_voxelPosition0 );
@@ -4886,8 +4859,6 @@ class anisotropic_populate_vertex_channels {
     const std::vector<frantic::channels::channel_general_accessor>& inputChannels;
     const particle_anisotropic_is_policy* isp;
     const channel_map_weighted_sum& channelMapWeightedSum;
-
-    anisotropic_populate_vertex_channels& operator=( const anisotropic_populate_vertex_channels& ); // not implemented
 
   public:
     anisotropic_populate_vertex_channels(
@@ -4983,8 +4954,8 @@ particle_anisotropic_is_policy::particle_anisotropic_is_policy(
     const frantic::volumetrics::voxel_coord_system& meshingVCS, int vertexRefinement )
     : particle_is_policy_base<particle_anisotropic_is_policy>( particles )
     , m_implicitThreshold( implicitThreshold )
-    , m_meshingVCS( meshingVCS )
-    , m_vertexRefinement( vertexRefinement ) {
+    , m_vertexRefinement( vertexRefinement )
+    , m_meshingVCS( meshingVCS ) {
     m_positionAccessor = m_particles.get_channel_map().get_accessor<vector3f>( _T("Position") );
     m_radiusAccessor = m_particles.get_channel_map().get_accessor<float>( _T("Radius") );
     m_volumeAccessor = m_particles.get_channel_map().get_accessor<float>( _T("__Volume") );

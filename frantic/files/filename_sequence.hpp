@@ -3,7 +3,6 @@
 #pragma once
 
 #include <set>
-#include <string>
 #include <vector>
 
 #include <frantic/strings/tstring.hpp>
@@ -127,7 +126,6 @@ class frame_set {
     frame_set( const std::vector<double>& frames );
     frame_set( const std::vector<int>& wholeframes );
     frame_set( int startFrame, int endFrame );
-    frame_set( const frame_set& rhs );
 
     // set operations
     int add_frame( int wholeframe );

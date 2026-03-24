@@ -21,12 +21,10 @@
 #include <boost/foreach.hpp>
 #include <boost/pending/disjoint_sets.hpp>
 
-#include <tbb/atomic.h>
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_sort.h>
 #include <tbb/spin_mutex.h>
-#include <tbb/task_scheduler_init.h>
 
 #include <algorithm>
 #include <utility>
@@ -328,9 +326,6 @@ bool remove_coincident_geometry( trimesh3& mesh, double epsilon, frantic::loggin
 
     logger->update_progress( 40.f );
 
-    size_t vertexRemovalCount = 0;
-    size_t faceRemovalCount = 0;
-
     {
         progress_logger_subinterval_tracker subinterval( *logger, 40.f, 50.f );
 
@@ -361,8 +356,6 @@ bool remove_coincident_geometry( trimesh3& mesh, double epsilon, frantic::loggin
                     if( diff <= epsilon ) {
                         bool collapse = edgeStructure.try_collapse_edge( handle );
                         if( collapse ) {
-                            ++vertexRemovalCount;
-                            faceRemovalCount += incidentFaces;
                             anyMods = true;
                         }
                     }
@@ -443,8 +436,6 @@ class parallel_collect_edges_with_face {
   private:
     const std::vector<frantic::graphics::vector3>& m_faces;
     std::vector<edge_with_face>& m_edgeSet;
-
-    parallel_collect_edges_with_face& operator=( const parallel_collect_edges_with_face& );
 
   public:
     parallel_collect_edges_with_face( const std::vector<frantic::graphics::vector3>& faces,

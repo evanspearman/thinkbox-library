@@ -114,7 +114,7 @@ inline VectorType get_bezier_curve_mid_derivative( const VectorType& position0, 
 }
 
 template <typename VectorType>
-inline VectorType get_bezier_curve_end_derivative( const VectorType& position0, const VectorType& control0,
+inline VectorType get_bezier_curve_end_derivative( [[maybe_unused]] const VectorType& position0, [[maybe_unused]] const VectorType& control0,
                                                    const VectorType& control1, const VectorType& position1 ) {
     return 3 * ( position1 - control1 );
 }

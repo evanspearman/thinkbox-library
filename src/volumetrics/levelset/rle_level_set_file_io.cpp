@@ -1045,8 +1045,8 @@ bool rls_network_cache::get_nearest_subframe_interval( frantic::files::filename_
 }
 
 // DEPRECATED
-void rls_network_cache::copy_level_set_file( const frantic::tstring& sourceFile, const frantic::tstring& destFile,
-                                             const bool failFlag ) {
+void rls_network_cache::copy_level_set_file( [[maybe_unused]] const frantic::tstring& sourceFile, [[maybe_unused]] const frantic::tstring& destFile,
+                                             [[maybe_unused]] const bool failFlag ) {
 #ifdef _WIN32
     // try to copy the requested file
     if( CopyFile( sourceFile.c_str(), destFile.c_str(), failFlag ) )

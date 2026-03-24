@@ -43,10 +43,10 @@ class particle_container_particle_istream : public particle_istream {
                                          const frantic::channels::channel_map& particleMap,
                                          const frantic::tstring& name = _T("<particle container>") )
         : m_name( name )
-        , m_curIter( itBegin )
-        , m_endIter( itEnd )
         , m_sourceMap( particleMap )
-        , m_outputMap( particleMap ) {
+        , m_outputMap( particleMap )
+        , m_curIter( itBegin )
+        , m_endIter( itEnd ) {
         // Start the particle index one before the first valid index
         m_particleIndex = -1;
         // This might not be valid for forward iterators, so it might have to be a parameter.

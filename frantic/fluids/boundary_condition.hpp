@@ -193,9 +193,9 @@ inline boost::uint32_t set_face_boundary( boost::uint32_t value, boost::uint32_t
     if( boundaryValue != NONE && boundaryValue != DIRICHLET && boundaryValue != NEUMANN && boundaryValue != INVALID )
         throw std::runtime_error(
             "set_face_boundary() - boundary value " + boost::lexical_cast<std::string>( boundaryValue ) +
-            " is not valid, it should be one these values, NEUWMANN=" + boost::lexical_cast<std::string>( NEUMANN ) +
-            " DIRICHLET=" + boost::lexical_cast<std::string>( DIRICHLET ) + " NONE=" +
-            boost::lexical_cast<std::string>( NONE ) + " INVALID=" + boost::lexical_cast<std::string>( INVALID ) );
+            " is not valid, it should be one these values, NEUWMANN=" + boost::lexical_cast<std::string>( static_cast<int>( NEUMANN ) ) +
+            " DIRICHLET=" + boost::lexical_cast<std::string>( static_cast<int>( DIRICHLET ) ) + " NONE=" +
+            boost::lexical_cast<std::string>( static_cast<int>( NONE ) ) + " INVALID=" + boost::lexical_cast<std::string>( static_cast<int>( INVALID ) ) );
     // extract the flag value
     // uint32_t flag = value&face_masks::get_mask(face) >> face_masks::get_shift(face);
 

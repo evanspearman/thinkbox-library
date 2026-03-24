@@ -2,21 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 
-//#include <malloc.h>
-//#include <process.h>
+#include<frantic/logging/progress_logger.hpp>
+
 #include <boost/smart_ptr.hpp>
 
-#pragma warning( push, 3 )
-#pragma warning( disable : 4512 4100 )
-//#include <tbb/task.h>
-#include <tbb/atomic.h>
 #include <tbb/parallel_sort.h>
-#include <tbb/tbb_thread.h>
-#pragma warning( pop )
+
+#include <atomic>
+#include <thread>
 
 #define PARALLEL_CUTOFF 10000
-
-// NOTE: You should include windows.h before this file to get threaded_frantic::sort()
 
 namespace frantic {
 namespace sort {
@@ -207,15 +202,15 @@ inline void sort( RandIter begin, RandIter end, Pred cmp ) {
 
 namespace detail {
 struct progress_info {
-    tbb::tbb_thread::id m_mainThreadId;
-    tbb::atomic<std::size_t> m_currentProgress;
+    std::thread::id m_mainThreadId;
+    std::atomic<std::size_t> m_currentProgress;
     std::size_t m_totalProgress;
 
     frantic::logging::progress_logger* m_progress;
 };
 
 template <class RandIter, class Pred, class ValueType, class RandIterTraits>
-class sort_task : public tbb::task {
+class sort_task {
     std::pair<RandIter, RandIter> m_range;
     Pred m_pred;
 
@@ -223,11 +218,38 @@ class sort_task : public tbb::task {
 
     std::size_t m_elementSize;
 
-    void add_progress( std::size_t progress ) {
-        std::size_t currentProgress = m_progInfo.m_currentProgress.fetch_and_add( progress ) + progress;
-        if( tbb::this_tbb_thread::get_id() == m_progInfo.m_mainThreadId )
+    void add_progress( std::size_t progress ) const {
+        std::size_t currentProgress = m_progInfo.m_currentProgress.fetch_add( progress ) + progress;
+        if( std::this_thread::get_id() == m_progInfo.m_mainThreadId )
             m_progInfo.m_progress->update_progress( static_cast<long>( currentProgress ),
                                                     static_cast<long>( m_progInfo.m_totalProgress ) );
+    }
+
+    void run_impl( const std::pair<RandIter, RandIter>& range, oneapi::tbb::task_group& tg ) const {
+        std::size_t rangeSize = ( m_range.second - m_range.first );
+        if( rangeSize < PARALLEL_CUTOFF ) {
+            frantic::sort::sort<RandIter, Pred, ValueType, RandIterTraits>( m_range.first, m_range.second, m_pred,
+                                                                            m_elementSize );
+
+            add_progress( rangeSize );
+
+            return;
+        }
+        std::pair<std::size_t, std::size_t> sizes =
+            frantic::sort::partition<RandIter, Pred, ValueType, RandIterTraits>( m_range.first, m_range.second,
+                                                                                 m_pred, m_elementSize );
+
+        RandIter leftBegin = range.first;
+        RandIter leftEnd = range.first + sizes.first;
+        RandIter rightBegin = range.second - sizes.second;
+        RandIter rightEnd = range.second;
+        std::size_t pivotElementCount = static_cast<std::size_t>( rightBegin - rightEnd);
+        add_progress( pivotElementCount );
+
+        tg.run( [this, rightBegin, rightEnd, &tg]() {
+                    run_impl( std::make_pair( rightBegin, rightEnd ), tg );
+                });
+        run_impl( std::make_pair( leftBegin, leftEnd ), tg );
     }
 
   public:
@@ -236,36 +258,10 @@ class sort_task : public tbb::task {
         , m_pred( pred )
         , m_progInfo( progInfo )
         , m_elementSize( es ) {}
-
-    tbb::task* execute() {
-        std::size_t rangeSize = ( m_range.second - m_range.first );
-        if( rangeSize < PARALLEL_CUTOFF ) {
-            frantic::sort::sort<RandIter, Pred, ValueType, RandIterTraits>( m_range.first, m_range.second, m_pred,
-                                                                            m_elementSize );
-
-            add_progress( rangeSize );
-
-            return NULL;
-        } else {
-            std::pair<std::size_t, std::size_t> sizes =
-                frantic::sort::partition<RandIter, Pred, ValueType, RandIterTraits>( m_range.first, m_range.second,
-                                                                                     m_pred, m_elementSize );
-
-            std::size_t pivotElementCount = ( m_range.second - sizes.second ) - ( m_range.first + sizes.first );
-            add_progress( pivotElementCount );
-
-            tbb::empty_task& c = *new( allocate_continuation() ) tbb::empty_task;
-            c.set_ref_count( 2 );
-
-            tbb::task& t2 = *new( c.allocate_child() ) sort_task<RandIter, Pred, ValueType, RandIterTraits>(
-                std::make_pair( m_range.second - sizes.second, m_range.second ), m_pred, m_progInfo, m_elementSize );
-            spawn( t2 );
-
-            recycle_as_child_of( c );
-            m_range.second = m_range.first + sizes.first;
-
-            return this;
-        }
+    void run() const {
+        oneapi::tbb::task_group tg;
+        run_impl( m_range, tg );
+        tg.wait();
     }
 };
 } // namespace detail
@@ -286,14 +282,14 @@ inline void parallel_sort( RandIter begin, RandIter end, Pred cmp, frantic::logg
 
     detail::progress_info theProgressInfo;
 
-    theProgressInfo.m_mainThreadId = tbb::this_tbb_thread::get_id();
+    theProgressInfo.m_mainThreadId = std::this_thread::get_id();
     theProgressInfo.m_currentProgress = 0;
     theProgressInfo.m_totalProgress = ( end - begin );
     theProgressInfo.m_progress = &progress;
 
-    tbb::task& t0 = *new( tbb::task::allocate_root() ) detail::sort_task<RandIter, Pred, ValueType, RandIterTraits>(
-        std::make_pair( begin, end ), cmp, theProgressInfo, elementSize );
-    tbb::task::spawn_root_and_wait( t0 );
+    detail::sort_task<RandIter, Pred, ValueType, RandIterTraits>(
+        std::make_pair(begin, end ), cmp, theProgressInfo, elementSize
+    ).run();
 
     progress.update_progress( theProgressInfo.m_currentProgress, theProgressInfo.m_totalProgress );
 }
