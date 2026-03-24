@@ -4,6 +4,7 @@
 #include "stdafx.h"
 // clang-format on
 
+#include <boost/array.hpp>
 #include <boost/foreach.hpp>
 #include <boost/numeric/conversion/cast.hpp>
 
@@ -705,8 +706,23 @@ void transform( polymesh3_ptr mesh, const frantic::graphics::transform4f& xform,
 
         // Get the Velocity channel
         bool hasVelocityChannel = mesh->has_vertex_channel( _T("Velocity") );
-        polymesh3_vertex_accessor<void> velAcc;
+
+        // Get the Normal channel
+        bool hasNormalChannel = mesh->has_vertex_channel( _T("Normal") );
+        polymesh3_vertex_accessor<void> normalAcc;
+        if( hasNormalChannel ) {
+            normalAcc = mesh->get_vertex_accessor( _T("Normal") );
+
+            if( normalAcc.get_arity() != 3 ) {
+                throw std::runtime_error( "transform() - The Normal channel of the mesh has arity " +
+                                          boost::lexical_cast<std::string>( normalAcc.get_arity() ) +
+                                          ", but it should have arity 3." );
+            }
+        }
+
+        // Apply the transform to the positions and Velocities
         if( hasVelocityChannel ) {
+            polymesh3_vertex_accessor<void> velAcc;
             velAcc = mesh->get_vertex_accessor( _T("Velocity") );
             if( velAcc.has_custom_faces() ) {
                 throw std::runtime_error(
@@ -724,23 +740,6 @@ void transform( polymesh3_ptr mesh, const frantic::graphics::transform4f& xform,
                                           boost::lexical_cast<std::string>( velAcc.get_arity() ) +
                                           ", but it should have arity 3." );
             }
-        }
-
-        // Get the Normal channel
-        bool hasNormalChannel = mesh->has_vertex_channel( _T("Normal") );
-        polymesh3_vertex_accessor<void> normalAcc;
-        if( hasNormalChannel ) {
-            normalAcc = mesh->get_vertex_accessor( _T("Normal") );
-
-            if( normalAcc.get_arity() != 3 ) {
-                throw std::runtime_error( "transform() - The Normal channel of the mesh has arity " +
-                                          boost::lexical_cast<std::string>( normalAcc.get_arity() ) +
-                                          ", but it should have arity 3." );
-            }
-        }
-
-        // Apply the transform to the positions and Velocities
-        if( hasVelocityChannel ) {
             frantic::channels::channel_type_convertor_function_t convertFromChannel =
                 get_channel_type_convertor_function( velAcc.get_type(), frantic::channels::data_type_float32,
                                                      _T("Velocity") );

@@ -71,6 +71,8 @@ struct temporary_result {
         : offset( _offset )
         , arity( _arity )
         , type( _type ) {}
+
+    temporary_result& operator=( const temporary_result& ) = default;
 };
 
 template <class T>

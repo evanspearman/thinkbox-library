@@ -315,8 +315,11 @@ void frantic::fluids::apply_constrained_occlusion_boundary_velocity(
     rle_channel_accessor<vector3f> inputStaggeredVelocityAcc =
         velocityField.get_channel_accessor<vector3f>( staggeredVelocityChannelName );
     std::vector<vector3f> outputStaggeredVelocity( inputStaggeredVelocityAcc.size() );
-    memcpy( &outputStaggeredVelocity[0], &inputStaggeredVelocityAcc[0],
-            inputStaggeredVelocityAcc.size() * sizeof( vector3f ) );
+    std::copy(
+        &inputStaggeredVelocityAcc[0],
+        &inputStaggeredVelocityAcc[0] + inputStaggeredVelocityAcc.size(),
+        outputStaggeredVelocity.begin()
+    );
 
     const separation_t* separationChannel = 0;
     if( !maintainFluidSeparationChannelName.empty() ) {
@@ -494,9 +497,11 @@ void frantic::fluids::apply_constrained_occlusion_boundary_velocity(
 
         outputStaggeredVelocity[velocityIndex] = resultVelocity;
     }
-
-    memcpy( &inputStaggeredVelocityAcc[0], &outputStaggeredVelocity[0],
-            inputStaggeredVelocityAcc.size() * sizeof( vector3f ) );
+    std::copy(
+        outputStaggeredVelocity.begin(),
+        outputStaggeredVelocity.end(),
+        &inputStaggeredVelocityAcc[0]
+    );
 }
 
 void frantic::fluids::apply_sim_boundary( const boundbox3& simBounds, rle_voxel_field& velocityField,

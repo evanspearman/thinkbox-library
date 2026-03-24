@@ -812,6 +812,7 @@ class mesh_channel_cvt {
         m_channel = meshChannelMap.get_channel( channelName );
         init();
     }
+    mesh_channel_cvt& operator=( const mesh_channel_cvt& ) = default;
 
     bool is_valid() const { return m_channel != 0; }
     const frantic::tstring& get_name() const { return m_channel->get_name(); }

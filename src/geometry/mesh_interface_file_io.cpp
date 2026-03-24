@@ -13,7 +13,7 @@
 #include <boost/thread.hpp>
 #endif
 
-#include <tbb/atomic.h>
+#include <atomic>
 
 #include <frantic/files/compression_stream.hpp>
 #include <frantic/files/files.hpp>
@@ -92,29 +92,29 @@ namespace {
 #ifndef FRANTIC_DISABLE_THREADS
 // A simple thread pool for saving xmesh channels in parallel.
 class thread_pool {
-    boost::asio::io_service m_service;
-    boost::shared_ptr<boost::asio::io_service::work> m_work;
+    boost::asio::io_context m_service;
+    boost::asio::executor_work_guard<boost::asio::io_context::executor_type> m_work;
     boost::thread_group m_threads;
-    boost::thread* m_thread;
 
   public:
     thread_pool( std::size_t threadCount )
         : m_service( static_cast<int>( std::max<std::size_t>( threadCount, 1 ) ) )
-        , m_work( new boost::asio::io_service::work( m_service ) ) {
+        , m_work( boost::asio::make_work_guard( m_service ) ) {
         threadCount = std::max<std::size_t>( threadCount, 1 );
         for( std::size_t i = 0; i < threadCount; ++i ) {
-            m_thread = m_threads.create_thread( boost::bind( &boost::asio::io_service::run, &m_service ) );
+            m_threads.create_thread( boost::bind( &boost::asio::io_context::run, &m_service ) );
         }
     }
 
     ~thread_pool() {
         m_work.reset();
+        m_service.stop();
         m_threads.join_all();
     }
 
     template <typename F>
     void schedule( F task ) {
-        m_service.post( task );
+        boost::asio::post( m_service, task );
     }
 };
 #else
@@ -139,9 +139,9 @@ class progress_info_wrapper {
     progress_info_wrapper& operator=( const progress_info_wrapper& ); // not implemented
 
   public:
-    tbb::atomic<bool> abortRequested;
-    tbb::atomic<std::size_t> progressElementsPassed;
-    tbb::atomic<std::size_t> progressTotalCount;
+    std::atomic<bool> abortRequested;
+    std::atomic<std::size_t> progressElementsPassed;
+    std::atomic<std::size_t> progressTotalCount;
 
     progress_info_wrapper( frantic::logging::progress_logger& progress )
         : m_progressLogger( progress ) {
@@ -918,7 +918,7 @@ class ply_file {
 
     operator p_ply() { return m_ply; }
 
-    operator const p_ply() const { return m_ply; }
+    operator p_ply() const { return m_ply; }
 
     int close() {
         if( m_isClosed )

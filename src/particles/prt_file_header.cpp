@@ -147,18 +147,18 @@ prt_channel_type data_type_to_prt_channel_type( data_type_t dt ) {
 }
 
 // The types supported as metadata extend the base types with a UTF-8 encoded string.
-data_type_t prt_metadata_type_to_data_type( prt_channel_type pct ) {
-    if( pct == prt_ct_utf8string )
-        return data_type_string;
-    return prt_channel_type_to_data_type( pct );
-}
+// data_type_t prt_metadata_type_to_data_type( prt_channel_type pct ) {
+//     if( pct == prt_ct_utf8string )
+//         return data_type_string;
+//     return prt_channel_type_to_data_type( pct );
+// }
 
-// The types supported as metadata extend the base types with a UTF-8 encoded string.
-prt_channel_type data_type_to_prt_metadata_type( data_type_t dt ) {
-    if( dt == data_type_string )
-        return prt_ct_utf8string;
-    return data_type_to_prt_channel_type( dt );
-}
+// // The types supported as metadata extend the base types with a UTF-8 encoded string.
+// prt_channel_type data_type_to_prt_metadata_type( data_type_t dt ) {
+//     if( dt == data_type_string )
+//         return prt_ct_utf8string;
+//     return data_type_to_prt_channel_type( dt );
+// }
 
 // This is the old header, for reference only
 struct prt_header_v1 {
@@ -791,7 +791,12 @@ void prt_file_header::write_header( std::ostream& out, const frantic::tstring& s
     for( int i = 0; i < channelCount; ++i ) {
         // fout << "Reset channel buffer" << std::endl;
         memset( &prtChannel, 0, sizeof( prt_channel_header_v1 ) );
-        strncpy( prtChannel.channelName, frantic::strings::to_string( m_particleChannelMap[i].name() ).c_str(), 32 );
+        auto name = frantic::strings::to_string( m_particleChannelMap[i].name() );
+        if( name.size() >= sizeof( prtChannel.channelName ) ) {
+            throw std::runtime_error( "PRT channel name is too long to fit in 32 bytes" );
+        }
+        std::memset( prtChannel.channelName, 0, sizeof( prtChannel.channelName ) );
+        std::memcpy( prtChannel.channelName, name.c_str(), name.size() );
         // fout << i << ") " << "Channel name " << m_particleChannelMap[i].name() << " copied " << std::endl;
         prtChannel.channelArity = (boost::int32_t)m_particleChannelMap[i].arity();
         prtChannel.channelType = data_type_to_prt_channel_type( m_particleChannelMap[i].data_type() );

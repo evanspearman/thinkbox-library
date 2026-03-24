@@ -15,7 +15,6 @@
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_sort.h>
 #include <tbb/spin_mutex.h>
-#include <tbb/task_scheduler_init.h>
 
 #include <vector>
 

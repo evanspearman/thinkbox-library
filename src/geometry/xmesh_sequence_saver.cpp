@@ -70,29 +70,30 @@ inline std::string utf8_from_channel_name( const std::wstring& s ) { return fran
 #ifndef FRANTIC_DISABLE_THREADS
 // A simple thread pool for saving xmesh channels in parallel.
 class thread_pool {
-    boost::asio::io_service m_service;
-    boost::shared_ptr<boost::asio::io_service::work> m_work;
+    boost::asio::io_context m_service;
+    boost::asio::executor_work_guard<boost::asio::io_context::executor_type> m_work;
     boost::thread_group m_threads;
-    boost::thread* m_thread;
 
   public:
     thread_pool( std::size_t threadCount )
         : m_service( static_cast<int>( std::max<std::size_t>( threadCount, 1 ) ) )
-        , m_work( new boost::asio::io_service::work( m_service ) ) {
+        , m_work( boost::asio::make_work_guard( m_service ) ) {
         threadCount = std::max<std::size_t>( threadCount, 1 );
+
         for( std::size_t i = 0; i < threadCount; ++i ) {
-            m_thread = m_threads.create_thread( boost::bind( &boost::asio::io_service::run, &m_service ) );
+            m_threads.create_thread( boost::bind( &boost::asio::io_context::run, &m_service ) );
         }
     }
 
     ~thread_pool() {
         m_work.reset();
+        m_service.stop();
         m_threads.join_all();
     }
 
     template <typename F>
     void schedule( F task ) {
-        m_service.post( task );
+        boost::asio::post( m_service, task );
     }
 };
 #else

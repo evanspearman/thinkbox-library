@@ -40,12 +40,12 @@ class directedlight_interface : public lightinterface {
         : lightinterface( name, flux, decayExponent, bShadowsEnabled, bUseNearAtten, bUseFarAtten, nearAttenuationStart,
                           nearAttenuationEnd, farAttenuationStart, farAttenuationEnd, decayOffset )
         , m_camera( camera )
+        , m_shadowDensity( shadowDensity )
         , m_lightShape( lightShape )
         , m_lightAspect( lightAspect )
         , m_sqrtLightAspect( sqrt( lightAspect ) )
         , m_innerRadius( innerRadius )
         , m_outerRadius( outerRadius )
-        , m_shadowDensity( shadowDensity )
 
     {}
 

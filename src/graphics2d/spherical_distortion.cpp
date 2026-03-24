@@ -135,7 +135,7 @@ std::vector<color6f> openimageio_data::get_pixel_at( const frantic::graphics2d::
 
         for( int iterationNum = 0; iterationNum < totalIterations; ++iterationNum ) {
             std::vector<float> colours( sizeof( color6f ) / sizeof( float ) );
-            for( int i = 0; i < colours.size(); ++i ) {
+            for( std::size_t i = 0; i < colours.size(); ++i ) {
                 colours[i] = m_data[pixelIndex++];
             }
 

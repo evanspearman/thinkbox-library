@@ -180,17 +180,17 @@ std::string replace_directory( const string& Path, string ReplacementDir = "" ) 
 }
 
 std::string replace_filename( const string& Path, const string& ReplacementName = "" ) {
-    return ( boost::filesystem::path( files::normalized_directory_name( Path ) ).branch_path() / ReplacementName )
+    return ( boost::filesystem::path( files::normalized_directory_name( Path ) ).parent_path() / ReplacementName )
         .string();
 }
 
 std::wstring replace_filename( const std::wstring& Path, const std::wstring& ReplacementName = L"" ) {
-    return ( boost::filesystem::path( files::normalized_directory_name( Path ) ).branch_path() / ReplacementName )
+    return ( boost::filesystem::path( files::normalized_directory_name( Path ) ).parent_path() / ReplacementName )
         .wstring();
 }
 
 boost::filesystem::path replace_extension_p( const boost::filesystem::path& Path, const string& ReplacementExt ) {
-    return Path.branch_path() / ( basename_from_path_p( Path ) + ReplacementExt );
+    return Path.parent_path() / ( basename_from_path_p( Path ) + ReplacementExt );
 }
 
 std::string replace_extension( const string& Path, const string& ReplacementExt ) {
@@ -202,7 +202,7 @@ std::string replace_extension( const string& Path, const string& ReplacementExt 
 std::wstring basename_from_path_p_w( const boost::filesystem::path& thePath );
 
 boost::filesystem::path replace_extension_p( const boost::filesystem::path& Path, const std::wstring& ReplacementExt ) {
-    return Path.branch_path() / ( basename_from_path_p_w( Path ) + ReplacementExt );
+    return Path.parent_path() / ( basename_from_path_p_w( Path ) + ReplacementExt );
 }
 
 std::wstring replace_extension( const std::wstring& Path, const std::wstring& ReplacementExt ) {
@@ -211,24 +211,24 @@ std::wstring replace_extension( const std::wstring& Path, const std::wstring& Re
 }
 
 std::string directory_from_path( const string& Path ) {
-    return boost::filesystem::path( files::normalized_directory_name( Path ) ).branch_path().string();
+    return boost::filesystem::path( files::normalized_directory_name( Path ) ).parent_path().string();
 }
 
 std::wstring directory_from_path( const wstring& Path ) {
-    return boost::filesystem::path( files::normalized_directory_name( Path ) ).branch_path().wstring();
+    return boost::filesystem::path( files::normalized_directory_name( Path ) ).parent_path().wstring();
 }
 
 std::string filename_from_path( const string& Path ) {
-    return boost::filesystem::path( files::normalized_directory_name( Path ) ).leaf().string();
+    return boost::filesystem::path( files::normalized_directory_name( Path ) ).filename().string();
 }
 
 std::wstring filename_from_path( const std::wstring& Path ) {
-    return boost::filesystem::path( files::normalized_directory_name( Path ) ).leaf().wstring();
+    return boost::filesystem::path( files::normalized_directory_name( Path ) ).filename().wstring();
 }
 
 std::string basename_from_path_p( const boost::filesystem::path& thePath ) {
     // Grab the filename
-    string filename = thePath.leaf().string();
+    string filename = thePath.filename().string();
 
     // Split it into the basename and the extension
     size_t extIndex = filename.rfind( '.' );
@@ -241,7 +241,7 @@ std::string basename_from_path_p( const boost::filesystem::path& thePath ) {
 
 std::wstring basename_from_path_p_w( const boost::filesystem::path& thePath ) {
     // Grab the filename
-    std::wstring filename = thePath.leaf().wstring();
+    std::wstring filename = thePath.filename().wstring();
 
     // Split it into the basename and the extension
     size_t extIndex = filename.rfind( '.' );
@@ -436,7 +436,7 @@ bool has_sequence_number( const std::string& path ) {
 boost::filesystem::path replace_sequence_number( const boost::filesystem::path& thePath, long newNumber,
                                                  int numDigits ) {
     // Grab the filename
-    frantic::tstring filename = to_tstring( thePath.leaf() );
+    frantic::tstring filename = to_tstring( thePath.filename() );
 
     // Split it into the basename and the extension
     frantic::tstring basename, extension;
@@ -477,7 +477,7 @@ boost::filesystem::path replace_sequence_number( const boost::filesystem::path& 
         basename += frantic::strings::zero_pad( newNumber, numDigits );
     }
 
-    return thePath.branch_path() / ( basename + extension );
+    return thePath.parent_path() / ( basename + extension );
 }
 
 std::string replace_sequence_number( const string& thePath, long newNumber, int numDigits ) {
@@ -581,7 +581,7 @@ void split_sequence_path( const boost::filesystem::path& thePath, boost::filesys
 
 int extract_sequence_number( const boost::filesystem::path& thePath ) {
     // Grab the filename
-    frantic::tstring filename = frantic::files::to_tstring( thePath.leaf() );
+    frantic::tstring filename = frantic::files::to_tstring( thePath.filename() );
 
     // Remove the extension
     size_t extIndex = filename.rfind( '.' );
@@ -778,7 +778,7 @@ std::string remove_tile_tag_from_filename( const std::string& filename ) {
 }
 #endif
 
-frantic::tstring get_universal_name( const frantic::tstring& path ) {
+frantic::tstring get_universal_name( [[maybe_unused]] const frantic::tstring& path ) {
 #if defined( _WIN32 ) || defined( _WIN64 )
 
     if( path.length() < 2 || path[1] != ':' )

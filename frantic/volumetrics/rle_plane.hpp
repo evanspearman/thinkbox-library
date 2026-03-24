@@ -239,10 +239,8 @@ class rle_plane {
             while( (int)m_xStarts.size() < extent )
                 m_xStarts.push_back( code );
             m_xStarts.push_back( int( m_runs.size() ) );
-            m_runs.resize( m_runs.size() + runs.size() );
-            memcpy( &m_runs[m_runs.size() - runs.size()], &runs[0], sizeof( std::pair<int, int> ) * runs.size() );
-            m_runCodes.resize( m_runCodes.size() + runs.size() );
-            memset( &m_runCodes[m_runCodes.size() - runs.size()], 0, sizeof( int ) * runs.size() );
+            m_runs.insert(m_runs.end(), runs.begin(), runs.end());
+            m_runCodes.insert(m_runCodes.end(), runs.size(), 0);
         }
     }
 
@@ -301,11 +299,8 @@ class rle_plane {
 
             m_xStarts.push_back( int( m_runs.size() ) );
 
-            m_runs.resize( m_runs.size() + runs.size() );
-            memcpy( &m_runs[m_runs.size() - runs.size()], &runs[0], sizeof( std::pair<int, int> ) * runs.size() );
-
-            m_runCodes.resize( m_runCodes.size() + runCodes.size() );
-            memcpy( &m_runCodes[m_runCodes.size() - runCodes.size()], &runCodes[0], sizeof( int ) * runCodes.size() );
+            m_runs.insert(m_runs.end(), runs.begin(), runs.end());
+            m_runCodes.insert(m_runCodes.end(), runCodes.begin(), runCodes.end());
         }
     }
 

@@ -10,7 +10,7 @@
 , openexr
 , zlib
 , tbb
-, tinyxml
+, tinyxml-2
 , utf8cpp
 , xxHash
 , libb2
@@ -47,7 +47,7 @@ stdenv.mkDerivation rec {
       glog
       openexr
       zlib
-      tinyxml
+      tinyxml-2
       utf8cpp
       xxHash
       libb2

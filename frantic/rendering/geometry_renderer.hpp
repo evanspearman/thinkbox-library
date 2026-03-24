@@ -5,10 +5,7 @@
 
 #include <vector>
 
-#pragma warning( push, 3 )
-#pragma warning( disable : 4512 )
 #include <boost/random.hpp>
-#pragma warning( pop )
 
 #include <frantic/graphics2d/framebuffer.hpp>
 #include <frantic/rendering/framebuffer_cubeface.hpp>
@@ -77,7 +74,6 @@ class geometry_renderer {
 
         vector2 p;
         size2 sz = renderFramebuffer.size();
-        size2 szSuper = superSampling * sz;
         bool isValid;
         for( p.y = 0; p.y < sz.ysize; ++p.y ) {
             //			cerr.flush();
@@ -134,7 +130,6 @@ class geometry_renderer {
 
         vector2 p;
         size2 sz = renderFramebuffer.size();
-        size2 szSuper = superSampling * sz;
         bool isValid;
         for( p.y = 0; p.y < sz.ysize; ++p.y ) {
             //			cerr.flush();
@@ -279,7 +274,6 @@ class geometry_renderer {
 
         vector2 pixel;
         size2 sz = renderFramebuffer.size();
-        size2 szSuper = superSampling * sz;
         bool isValid;
         for( pixel.y = 0; pixel.y < sz.ysize; ++pixel.y ) {
             cerr.flush();

@@ -38,11 +38,8 @@ class dcel_halfedge_iterator_base {
         : m_current( start )
         , m_isBegin( false ) {}
 
-    dcel_halfedge_iterator_base& operator=( const dcel_halfedge_iterator_base& other ) {
-        m_current = other.m_current;
-        m_isBegin = other.m_isBegin;
-        return *this;
-    }
+    dcel_halfedge_iterator_base(const dcel_halfedge_iterator_base&) = default;
+    dcel_halfedge_iterator_base& operator=(const dcel_halfedge_iterator_base&) = default;
 
     bool operator==( const dcel_halfedge_iterator_base& other ) const {
         return m_current == other.m_current && ( m_isBegin == other.m_isBegin );

@@ -103,7 +103,7 @@ find_package(Eigen3 REQUIRED CONFIG)
 find_package(glog REQUIRED)
 find_package(OpenEXR REQUIRED)
 find_package(ZLIB REQUIRED)
-pkg_check_modules(TINYXML REQUIRED IMPORTED_TARGET tinyxml)
+find_package(tinyxml2 REQUIRED CONFIG)
 find_package(utf8cpp REQUIRED)
 pkg_check_modules(XXHASH REQUIRED IMPORTED_TARGET libxxhash)
 
@@ -116,7 +116,7 @@ target_link_libraries(thinkboxlibrary
         glog::glog
         OpenEXR::OpenEXR
         ZLIB::ZLIB
-        PkgConfig::TINYXML
+        tinyxml2::tinyxml2
         utf8cpp::utf8cpp
         PkgConfig::XXHASH
 )

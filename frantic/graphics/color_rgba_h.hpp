@@ -51,7 +51,7 @@ class color_rgba_h : public color_base<color_rgba_h, half, 3, 1> {
 };
 
 inline std::ostream& operator<<( std::ostream& out, const color_rgba_h& p ) {
-    out << "color_rgba_h( " << p.get_r() << ", " << p.get_g() << ", " << p.get_b() << ", " << p.get_a() << " )";
+    out << "color_rgba_h( " << static_cast<float>(p.get_r()) << ", " << static_cast<float>(p.get_g()) << ", " << static_cast<float>(p.get_b()) << ", " << static_cast<float>(p.get_a()) << " )";
     return out;
 }
 

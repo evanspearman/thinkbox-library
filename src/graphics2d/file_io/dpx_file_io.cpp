@@ -279,9 +279,8 @@ void dpx_file_io::clean_header() {
     memset( &m_imageOrientation, 0, sizeof( image_orientation ) );
     memset( &m_motionPictureFilmHeader, 0, sizeof( motion_picture_film_header ) );
     memset( &m_televisionHeader, 0, sizeof( television_header ) );
-    if( m_userDefinedData.data != NULL )
-        delete[] m_userDefinedData.data;
-    memset( &m_userDefinedData, 0, sizeof( user_defined_data ) );
+    delete[] m_userDefinedData.data;
+    m_userDefinedData = user_defined_data{};
 }
 
 void dpx_file_io::clean_data() {

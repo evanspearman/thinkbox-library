@@ -36,7 +36,7 @@ class QHTraits_2D {
         return f;
     }
 
-    static const float distance_to_facet( const VertexType& v0, const VertexType& v1, const VertexType& v2 ) {
+    static float distance_to_facet( const VertexType& v0, const VertexType& v1, const VertexType& v2 ) {
         // TODO: maybe add this back if the extra precision is needed
         // return -math::orient2d((float*)&v0, (float*)&v1, (float*)&v2);
 
@@ -46,19 +46,19 @@ class QHTraits_2D {
     }
 
   public:
-    static const float distance_to_facet( const std::vector<VertexType>& pts, const FacetType& f, int p );
-    static const OutputType primitive_from_facet( const FacetType& f );
+    static float distance_to_facet( const std::vector<VertexType>& pts, const FacetType& f, int p );
+    static OutputType primitive_from_facet( const FacetType& f );
     static FacetType facet_from_ridge( const RidgeType& r, const FacetType& f, int p );
 
     template <class FacetCollection>
     static void build_initial_simplex( const std::vector<VertexType>& pts, FacetCollection& facets );
 };
 
-inline const float QHTraits_2D::distance_to_facet( const std::vector<VertexType>& pts, const FacetType& f, int p ) {
+inline float QHTraits_2D::distance_to_facet( const std::vector<VertexType>& pts, const FacetType& f, int p ) {
     return distance_to_facet( pts[f.get_vertex( 0 )], pts[f.get_vertex( 1 )], pts[p] );
 }
 
-inline const QHTraits_2D::OutputType QHTraits_2D::primitive_from_facet( const FacetType& f ) {
+inline QHTraits_2D::OutputType QHTraits_2D::primitive_from_facet( const FacetType& f ) {
     return OutputType( f.get_vertex( 0 ), f.get_vertex( 1 ) );
 }
 

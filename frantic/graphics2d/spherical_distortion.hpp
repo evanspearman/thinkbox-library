@@ -35,9 +35,9 @@ struct openimageio_data : public image_data {
 
   public:
     openimageio_data( const frantic::graphics2d::size2& imageSize, int numChannels )
-        : m_numChannels( numChannels )
-        , m_imageSize( imageSize )
-        , m_data( numChannels * imageSize.area() ) {}
+        : m_data( numChannels * imageSize.area() )
+        , m_numChannels( numChannels )
+        , m_imageSize( imageSize ) {}
 
     int num_channels() const { return m_numChannels; }
     frantic::graphics2d::size2 size() const { return m_imageSize; }

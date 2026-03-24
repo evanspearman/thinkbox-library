@@ -46,11 +46,11 @@ class lightinterface {
                     float farAttenuationStart = std::numeric_limits<float>::max(),
                     float farAttenuationEnd = std::numeric_limits<float>::max(), float decayOffset = 1.f )
         : m_name( name )
-        , m_flux_over_4pi( flux / ( 2.f * (float)M_2PI ) )
-        , m_decayExponent( decayExponent )
         , m_bShadowsEnabled( bShadowsEnabled )
         , m_bUseNearAtten( bUseNearAtten )
         , m_bUseFarAtten( bUseFarAtten )
+        , m_flux_over_4pi( flux / ( 2.f * (float)M_2PI ) )
+        , m_decayExponent( decayExponent )
         , m_nearAttenuationStart( nearAttenuationStart )
         , m_nearAttenuationEnd( nearAttenuationEnd )
         , m_farAttenuationStart( farAttenuationStart )

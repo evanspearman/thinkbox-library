@@ -12,7 +12,6 @@
 #include <frantic/rendering/depthbuffer_singleface.hpp>
 #include <string>
 
-#pragma warning( push, 3 )
 #include <ImathBox.h>
 #include <ImfChannelList.h>
 #include <ImfEnvmap.h>
@@ -25,7 +24,6 @@
 #include <ImfOutputFile.h>
 #include <ImfStandardAttributes.h>
 #include <half.h>
-#pragma warning( pop )
 
 using namespace frantic::graphics;
 

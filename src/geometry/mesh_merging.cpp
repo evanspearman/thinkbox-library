@@ -6,6 +6,7 @@
 
 #include <boost/foreach.hpp>
 #include <boost/pending/disjoint_sets.hpp>
+#include <boost/numeric/conversion/cast.hpp>
 
 #include <frantic/geometry/mesh_merging.hpp>
 

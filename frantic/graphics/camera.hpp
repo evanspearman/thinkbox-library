@@ -200,17 +200,15 @@ class camera {
     camera( projection_mode::projection_mode projectionMode, const motion_blurred_transform<FloatType>& transform,
             FloatType FOV_or_Width, frantic::graphics2d::size2 outputSize = frantic::graphics2d::size2( 640, 480 ),
             FloatType nearClip = 0.001f, FloatType farClip = 1e+10, FloatType pixelAspect = 1.0f )
-        : m_projectionMode( projectionMode )
-        , m_cameraToWorldTransform( transform )
-        , m_outputSize( outputSize )
+        : m_outputSize( outputSize )
+        , m_projectionMode( projectionMode )
+        , m_pixelAspect( pixelAspect )
         , m_near( nearClip )
         , m_far( farClip )
-
+        , m_cameraToWorldTransform( transform )
         , m_fStop( 1e30f ) // Default to no depth of field
         , m_focalLength( 30 )
-        , m_focalDistance( 100 )
-
-        , m_pixelAspect( pixelAspect ) {
+        , m_focalDistance( 100 ) {
         using namespace std;
 
         set_horizontal_fov( FOV_or_Width );

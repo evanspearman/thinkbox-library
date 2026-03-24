@@ -431,7 +431,7 @@ inline T safeCmdLineGet( boost::program_options::variables_map& cmd_line_vars, s
  * @return the XML document's encoding declaration, if it exists.  Returns an empty
  *        string otherwise.
  */
-inline std::string get_encoding_declaration( const tinyxml2::XMLDocument& doc ) {
+inline std::string get_encoding_declaration( [[maybe_unused]] const tinyxml2::XMLDocument& doc ) {
     return std::string( "UTF-8" );
 }
 
@@ -455,7 +455,7 @@ inline std::string remove_unsupported_xml_elements( const boost::filesystem::pat
     size_t pos = 0;
     while( true ) {
         pos = xmlString.find_first_of( "<", pos );
-        if( pos == -1 ) {
+        if( pos == std::numeric_limits<std::size_t>::max() ) {
             // We couldn't find a "<". If the first character in the file was a "?" or "!"
             // we would enter an infinite loop because xmlString[pos + 1] would always be a "?" or "!"
             // and the next condition would always evaluate to true.
