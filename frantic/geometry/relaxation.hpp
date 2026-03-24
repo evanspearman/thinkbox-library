@@ -29,7 +29,6 @@ Numbers 2-3, Pages 115-126.
 
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
-#include <tbb/task_scheduler_init.h>
 
 namespace frantic {
 namespace geometry {
@@ -175,7 +174,6 @@ template <class ImplicitSurfacePolicy>
 void find_face_gradients( std::vector<frantic::geometry::vector3f>& gradients,
                           std::vector<frantic::geometry::vector3>& faces,
                           std::vector<frantic::graphics::vector3f>& vertices, ImplicitSurfacePolicy& isp, float h ) {
-    tbb::task_scheduler_init taskScheduleInit;
     size_t numFaces = faces.size();
 
     gradients.clear();
@@ -244,7 +242,6 @@ void adaptive_regularizing_mean_curvature_smooth( frantic::geometry::trimesh3& m
 template <class ImplicitSurfacePolicy>
 void evolve_mesh_to_implicit_surface( frantic::geometry::trimesh3& mesh, ImplicitSurfacePolicy& isp, int iterations,
                                       float h, float C, frantic::logging::progress_logger* progressLogger ) {
-    tbb::task_scheduler_init taskScheduleInit;
 
     std::vector<std::vector<int>> adjFaces;
     std::vector<std::vector<int>> adjVertices;
@@ -279,7 +276,7 @@ void evolve_mesh_to_implicit_surface( frantic::geometry::trimesh3& mesh, Implici
             trimesh3_vertex_channel_accessor<vector3f> normals =
                 mesh.get_vertex_channel_accessor<vector3f>( _T("Normal") );
 
-            for( int v = 0; v < numVertices; ++v ) {
+            for( std::size_t v = 0; v < numVertices; ++v ) {
                 currVertices[v] = prevVertices[v] + detail::r_force( prevVertices, adjVertices[v], normals[v], v, C );
             }
             prevVertices = currVertices;

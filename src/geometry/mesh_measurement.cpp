@@ -9,8 +9,10 @@
 #include <frantic/particles/particle_array.hpp>
 #include <frantic/particles/streams/surface_particle_istream.hpp>
 
-#include <boost/range/algorithm/random_shuffle.hpp>
 #include <boost/range/irange.hpp>
+
+#include <algorithm>
+#include <random>
 
 namespace frantic {
 namespace geometry {
@@ -153,7 +155,8 @@ double hausdorff_distance_one_sided( const trimesh3& meshA, const trimesh3& mesh
         for( size_t i = 0; i < meshB.vertex_count(); ++i ) {
             indices.push_back( i );
         }
-        boost::random_shuffle( indices );
+        std::mt19937 rng( std::random_device{}() );
+        std::shuffle( indices.begin(), indices.end(), rng );
 
         for( size_t i = 0; i < numSamples && i < meshB.vertex_count(); ++i ) {
             if( aKdtree.find_nearest_point( meshB.get_vertex( indices[i] ), maxDistance, nearestPoint ) ) {

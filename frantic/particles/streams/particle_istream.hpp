@@ -13,7 +13,6 @@
 #include <frantic/misc/exception_stream.hpp>
 
 #include <tbb/blocked_range.h>
-#include <tbb/tbb_stddef.h>
 
 //*************************************************************************************************************************************************************
 // This 64 bit number is used to uniquely define the particle_istream interface's version. Any changes made to

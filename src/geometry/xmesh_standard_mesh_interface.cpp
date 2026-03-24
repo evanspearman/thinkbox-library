@@ -150,7 +150,7 @@ xmesh_standard_mesh_channel::xmesh_standard_mesh_channel( const mesh_channel* ch
                                   frantic::strings::to_string( get_name() ) +
                                   "\" "
                                   "with unhandled channel type: " +
-                                  boost::lexical_cast<std::string>( get_channel_type() ) );
+                                  boost::lexical_cast<std::string>( static_cast<int>( get_channel_type() ) ) );
     }
 
     m_convert =

@@ -4,10 +4,7 @@
 #include "stdafx.h"
 // clang-format on
 
-#pragma warning( push )
-#pragma warning( disable : 4512 4100 )
 #include <tbb/parallel_reduce.h>
-#pragma warning( pop )
 
 #include <boost/bind.hpp>
 
@@ -850,11 +847,6 @@ struct FillCubeCaseValuesBody {
     const std::vector<float>& m_voxelCornerDensities;
     std::vector<boost::uint8_t>& m_outCubeCases;
 
-#pragma warning( push )
-#pragma warning( disable : 4822 ) // local class member function does not have a body
-    FillCubeCaseValuesBody& operator=( const FillCubeCaseValuesBody& ); // not implemented
-#pragma warning( pop )
-
     void operator()( const tbb::blocked_range<std::size_t>& r ) const {
         const std::size_t yStart = r.begin();
         const std::size_t yEnd = r.end();
@@ -876,7 +868,7 @@ struct FillCubeCaseValuesBody {
             outCubeCases[0] = cubeCase;
 
             // Special case the first row
-            for( int x = 1; x < m_size.xsize && x < m_outCubeCases.size(); ++x ) {
+            for( std::size_t x = 1; x < static_cast<std::size_t>( m_size.xsize ) && x < m_outCubeCases.size(); ++x ) {
                 cubeCase = ( previousCubeCases[x] & 0xf0 ) >> 4;
                 if( voxelCornerDensities[x - 1] < 0 )
                     cubeCase |= 0x50;
@@ -949,11 +941,6 @@ struct FillCubeCaseValuesBody2 {
     std::vector<boost::uint8_t>& m_outCubeCases;
     std::vector<boost::int32_t>& m_outNewVertexCount;
 
-#pragma warning( push )
-#pragma warning( disable : 4822 ) // local class member function does not have a body
-    FillCubeCaseValuesBody2& operator=( const FillCubeCaseValuesBody2& ); // not implemented
-#pragma warning( pop )
-
     void operator()( const tbb::blocked_range<std::size_t>& r ) const {
         const std::size_t yStart = r.begin();
         const std::size_t yEnd = r.end();
@@ -981,7 +968,7 @@ struct FillCubeCaseValuesBody2 {
             }
 
             // Special case the first row
-            for( int x = 1; x < m_size.xsize && x < m_outCubeCases.size(); ++x ) {
+            for( int x = 1; x < m_size.xsize && static_cast<std::size_t>( x ) < m_outCubeCases.size(); ++x ) {
                 cubeCase = ( previousCubeCases[x] & 0xf0 ) >> 4;
                 if( voxelCornerDensities[x - 1] < 0 )
                     cubeCase |= 0x50;

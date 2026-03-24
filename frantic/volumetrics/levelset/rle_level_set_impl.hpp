@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <boost/numeric/conversion/bounds.hpp>
 #include <frantic/volumetrics/levelset/rle_general_block_iterator.hpp>
-#include <vector>
+#include <frantic/volumetrics/voxel_coord_system.hpp>
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -375,7 +375,6 @@ class FillBoxBody {
         , m_outVoxelCornerValues( outVoxelCornerValues )
         , m_mutex( mutex ) {}
 
-    FillBoxBody& operator=( const FillBoxBody& rhs ) { return *( this ); } // unimplemented
 };
 
 } // namespace detail

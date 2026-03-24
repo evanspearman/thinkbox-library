@@ -113,7 +113,7 @@ void get_transforms( const tstring& file, std::vector<std::pair<tstring, MatrixT
         }
     }
 
-    if( numScans != outTransforms.size() ) {
+    if( numScans < 0 || static_cast<std::size_t>( numScans ) != outTransforms.size() ) {
         throw std::runtime_error( "aln.get_transforms: There number of scans specified in the header did not match the "
                                   "number of scans in the file body." );
     }

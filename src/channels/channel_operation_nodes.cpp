@@ -4,8 +4,6 @@
 #include "stdafx.h"
 // clang-format on
 
-// TODO: This file is HUGE, at > 2700 lines, should be split up into multiple files, probably its own directory
-
 #include <boost/mpl/assert.hpp>
 #include <boost/mpl/front.hpp>
 #include <boost/mpl/pop_front.hpp>
@@ -2691,7 +2689,7 @@ void surf_data_value_node::compile( const std::vector<channel_op_node*>& express
         inoutCompData.register_scoped_object( pOp->m_meshes );
     } else {
         throw channel_compiler_error( m_nodeId, "Error, invalid surface data value target: " +
-                                                    boost::lexical_cast<std::string>( m_target ) );
+                                                    boost::lexical_cast<std::string>( static_cast<int>( m_target ) ) );
     }
 
     inoutCompData.append_code_segment( theSeg );

@@ -125,8 +125,6 @@ vector3f direct_linear_rle_level_set_is_policy::find_internal_isosurface_locatio
         isosurfaceLocationAlpha = 0.5f;
     else
         isosurfaceLocationAlpha = fabsf( density0 / densityDelta );
-    vector3 isosurfaceLocationVoxelCorner0 = voxelCorner0;
-    vector3 isosurfaceLocationVoxelCorner1 = voxelCorner1;
     return ( 1 - isosurfaceLocationAlpha ) * corner_sample_coord_to_world( voxelCorner0 ) +
            isosurfaceLocationAlpha * corner_sample_coord_to_world( voxelCorner1 );
 }

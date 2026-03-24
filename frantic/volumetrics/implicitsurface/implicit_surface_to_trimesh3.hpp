@@ -1,9 +1,9 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-//#define FRANTIC_DISABLE_THREADS
 
 #pragma once
 
+#include <algorithm>
 #include <vector>
 
 #include <boost/array.hpp>
@@ -24,26 +24,19 @@
 #include <frantic/volumetrics/levelset/rle_defined_and_adj_iterator.hpp>
 #include <frantic/volumetrics/levelset/rle_level_set.hpp>
 #include <frantic/volumetrics/rle_plane.hpp>
-//#include <frantic/diagnostics/profiling_manager.hpp>
 #include <frantic/volumetrics/implicitsurface/level_set_implicit_surface_policies.hpp>
 #include <frantic/volumetrics/implicitsurface/particle_implicit_surface_policies.hpp>
 
-#pragma warning( push )
-#pragma warning( disable : 4512 4100 4244 4245 )
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_sort.h>
 #include <tbb/queuing_mutex.h>
 #include <tbb/spin_mutex.h>
 #include <tbb/spin_rw_mutex.h>
-#include <tbb/task_scheduler_init.h>
-#include <tbb/tbb_thread.h>
-#pragma warning( pop )
 
 namespace frantic {
 namespace volumetrics {
 namespace implicitsurface {
 
-// extern frantic::diagnostics::profiling_manager sparsePM;
 
 namespace detail {
 
@@ -246,8 +239,6 @@ class MarchingCubesVertexGenerationBody {
     // A r/w lock may no longer be useful here..
     tbb::spin_rw_mutex& m_outMeshMutex;
 
-    MarchingCubesVertexGenerationBody& operator=( const MarchingCubesVertexGenerationBody& );
-
   public:
     void operator()( const tbb::blocked_range<std::size_t>& r ) const {
         ImplicitSurfacePolicy& isp = m_isp;
@@ -433,9 +424,6 @@ struct generate_disambiguated_faces_for_plane_body {
     tbb::spin_mutex& m_meshMutex;
     std::vector<frantic::geometry::trimesh3_vertex_channel_general_accessor>& m_outNamedVertexChannels;
     frantic::geometry::trimesh3& m_outMesh;
-
-    generate_disambiguated_faces_for_plane_body<ImplicitSurfacePolicy>&
-    operator=( const generate_disambiguated_faces_for_plane_body<ImplicitSurfacePolicy>& ); // not implemented
 
     void operator()( const tbb::blocked_range<std::size_t>& r ) const {
         const std::size_t yStart = r.begin();
@@ -778,7 +766,7 @@ void generate_vertices_for_sparse_plane(
     const boost::shared_array<float> currentVoxelCornerDensities,
     const boost::shared_array<unsigned char> definedCubeCases,
     const frantic::volumetrics::rle_plane& definedCubeCasesRLP,
-    boost::shared_array<frantic::graphics::vector3>& prevVertexIndices,
+    [[maybe_unused]] boost::shared_array<frantic::graphics::vector3>& prevVertexIndices,
     boost::shared_array<frantic::graphics::vector3>& outVertexIndices,
     std::vector<frantic::geometry::trimesh3_vertex_channel_general_accessor>& outNamedVertexChannels,
     frantic::geometry::trimesh3& outMesh ) {
@@ -864,31 +852,21 @@ template <class ImplicitSurfacePolicy>
 struct generate_block_geometry_impl {
     ImplicitSurfacePolicy& m_isp;
     const frantic::volumetrics::marching_cubes_table& m_mct;
-
     const std::vector<frantic::graphics::vector3>& m_meshingBlocks;
     const frantic::graphics::size3 m_meshingBlockSize;
     const std::size_t m_bufferVertsSoftLimit;
     const std::size_t m_bufferFacesSoftLimit;
-
     const std::vector<frantic::tstring>& m_outVertexChannelNames;
-
     std::vector<frantic::graphics::vector3f>& m_externalVertices;
-
     const voxel_vertex_t& m_exposedVoxelVertices;
-
     tbb::spin_mutex& m_outMeshMutex;
     std::vector<frantic::geometry::trimesh3_vertex_channel_general_accessor>& m_outVertexChannels;
     frantic::geometry::trimesh3& m_outMesh;
     boost::int32_t& m_nextVertexNumber;
     boost::int32_t& m_nextFaceNumber;
     std::vector<exposed_voxel_vertices>& m_outExposedVertices;
-
     shared_progress_logger_proxy& m_progressLogger;
-
     int m_blockColor;
-
-    generate_block_geometry_impl<ImplicitSurfacePolicy>&
-    operator=( const generate_block_geometry_impl<ImplicitSurfacePolicy>& ); // not implemented
 
     void operator()( const tbb::blocked_range<std::size_t>& r ) const {
         frantic::geometry::trimesh3 bufferMesh;
@@ -984,44 +962,29 @@ struct generate_block_geometry_impl {
         ImplicitSurfacePolicy& isp, frantic::volumetrics::marching_cubes_table& mct, const int blockColor,
         const std::vector<frantic::graphics::vector3>& meshingBlocks, const frantic::graphics::size3 meshingBlockSize,
         const std::size_t bufferVertsSoftLimit, const std::size_t bufferFacesSoftLimit,
-        // const std::vector<exposed_voxel_vertices> & exposedVoxelVertices,
-        // const stdext::hash_map<vector3,std::pair<size_t,size_t>,voxel_coord_hasher> & blockToExposedVoxelVertices,
         const voxel_vertex_t& exposedVoxelVertices, std::vector<frantic::graphics::vector3f>& externalVertices,
         std::vector<frantic::tstring>& outVertexChannelNames,
         std::vector<frantic::geometry::trimesh3_vertex_channel_general_accessor>& outVertexChannels,
         frantic::geometry::trimesh3& outMesh, boost::int32_t& nextVertexNumber, boost::int32_t& nextFaceNumber,
         std::vector<exposed_voxel_vertices>& outExposedVertices, tbb::spin_mutex& outMeshMutex,
-        // tbb::atomic<std::size_t> & progress,
-        // frantic::logging::progress_logger & progressLogger,
-        shared_progress_logger_proxy& progressLogger
-        // tbb::queuing_mutex & progressMutex,
-        // tbb::tbb_thread::id guiThreadID/*,
-        /*tbb::task_group_context & taskGroupContext*/ )
+        shared_progress_logger_proxy& progressLogger )
         : m_isp( isp )
         , m_mct( mct )
-        , m_blockColor( blockColor )
         , m_meshingBlocks( meshingBlocks )
         , m_meshingBlockSize( meshingBlockSize )
         , m_bufferVertsSoftLimit( bufferVertsSoftLimit )
         , m_bufferFacesSoftLimit( bufferFacesSoftLimit )
-        , m_exposedVoxelVertices( exposedVoxelVertices )
-        ,
-        // m_blockToExposedVoxelVertices( blockToExposedVoxelVertices ),
-        m_externalVertices( externalVertices )
         , m_outVertexChannelNames( outVertexChannelNames )
+        , m_externalVertices( externalVertices )
+        , m_exposedVoxelVertices( exposedVoxelVertices )
+        , m_outMeshMutex( outMeshMutex )
         , m_outVertexChannels( outVertexChannels )
         , m_outMesh( outMesh )
         , m_nextVertexNumber( nextVertexNumber )
         , m_nextFaceNumber( nextFaceNumber )
         , m_outExposedVertices( outExposedVertices )
-        , m_outMeshMutex( outMeshMutex )
-        ,
-        // m_progress( progress ),
-        m_progressLogger( progressLogger ) //,
-    // m_progressMutex( progressMutex ),
-    // m_guiThreadID( guiThreadID )/*,
-    // m_taskGroupContext( taskGroupContext )*/
-    {}
+        , m_progressLogger( progressLogger )
+        , m_blockColor( blockColor ) {}
 };
 
 template <class ImplicitSurfacePolicy>
@@ -1057,7 +1020,7 @@ void generate_block_geometry_mt(
 
     const std::size_t colorCount = 8;
     boost::array<std::size_t, 8> blockColorCount;
-    blockColorCount.assign( 0 );
+    blockColorCount.fill( 0 );
 
     BOOST_FOREACH( const frantic::graphics::vector3& coord, meshingBlocks ) {
         ++blockColorCount[get_block_color( coord )];
@@ -1095,7 +1058,7 @@ void generate_block_geometry_mt(
 
     progressLogger.set_progress_end( meshingBlocks.size() );
 
-    for( int color = 0; color < colorCount; ++color ) {
+    for( std::size_t color = 0; color < colorCount; ++color ) {
         if( progressLogger.is_cancelled() ) {
             break;
         }
@@ -1160,7 +1123,6 @@ void convert_dense_implicit_surface_to_trimesh3( frantic::channels::channel_prop
                                                  ImplicitSurfacePolicy& mcp, frantic::geometry::trimesh3& outMesh ) {
     static marching_cubes_table mct;
 
-    tbb::task_scheduler_init taskSchedulerInit;
     tbb::affinity_partitioner partitioner;
 
     // Clear the mesh to start
@@ -1290,7 +1252,6 @@ void convert_implicit_surface_to_trimesh3( const frantic::channels::channel_prop
                                            frantic::logging::progress_logger& progressLogger ) {
     static marching_cubes_table mct;
 
-    tbb::task_scheduler_init taskSchedulerInit;
     tbb::affinity_partitioner partitioner;
 
     // frantic::diagnostics::profiling_manager prof;
@@ -1475,9 +1436,9 @@ struct voxel_vertex_cache {
     voxel_vertex_cache( const frantic::graphics::vector3& blockCoord,
                         const std::vector<exposed_voxel_vertices>& boundaryVertices,
                         block_lut_t& blockToBoundaryVertices )
-        : m_blockCoord( blockCoord )
-        , m_blockToBoundaryVertices( blockToBoundaryVertices )
-        , m_boundaryVertices( boundaryVertices ) {}
+        : m_blockToBoundaryVertices( blockToBoundaryVertices )
+        , m_boundaryVertices( boundaryVertices )
+        , m_blockCoord( blockCoord ) {}
     bool try_get( int direction, const frantic::graphics::vector3& voxelCoord,
                   frantic::graphics::vector3& outVertices ) {
         fill_cache_entry( direction );
@@ -1503,37 +1464,26 @@ int get_boundary_owner_direction_code( int blockColor, int boundaryCase );
 
 template <class ImplicitSurfacePolicy>
 class block_vertex_manager {
+    typename ImplicitSurfacePolicy::vertex_workspace_t& m_vertexWorkspace;
     const ImplicitSurfacePolicy& m_isp;
     const frantic::volumetrics::marching_cubes_table& m_mct;
+    const std::vector<float>& m_voxelCornerDensities;
+    tbb::spin_rw_mutex m_outMeshMutex;
+    std::vector<frantic::geometry::trimesh3_vertex_channel_general_accessor>& m_outNamedVertexChannels;
+    frantic::geometry::trimesh3& m_outMesh;
+    const voxel_vertex_t& m_exposedVoxelVertices;
+    std::vector<exposed_voxel_vertices>& m_outVoxelVertices;
+    std::vector<frantic::graphics::vector3>& m_outVertexIndices;
+    int m_xsize;
+    int m_xyArea;
+    int m_blockColor;
+    frantic::graphics::vector3 m_blockCoord;
+
     void get_corner_vert_flags( boost::uint8_t cubeCase, boost::uint8_t flags[3] ) {
         flags[0] = ( 0x40 & ( ( cubeCase >> 1 ) ^ cubeCase ) ) != 0; // edge 67
         flags[1] = ( 0x20 & ( ( cubeCase >> 2 ) ^ cubeCase ) ) != 0; // edge 57
         flags[2] = ( 0x08 & ( ( cubeCase >> 4 ) ^ cubeCase ) ) != 0; // edge 37
     }
-    const std::vector<float>& m_voxelCornerDensities;
-    tbb::spin_rw_mutex m_outMeshMutex;
-    std::vector<frantic::geometry::trimesh3_vertex_channel_general_accessor>& m_outNamedVertexChannels;
-    frantic::geometry::trimesh3& m_outMesh;
-
-    // const std::vector<exposed_voxel_vertices> & m_inVoxelVertices;
-    const voxel_vertex_t& m_exposedVoxelVertices;
-
-    std::vector<exposed_voxel_vertices>& m_outVoxelVertices;
-
-    std::vector<frantic::graphics::vector3>& m_outVertexIndices;
-
-    // voxel_vertex_cache m_voxelVertexCache;
-
-    typename ImplicitSurfacePolicy::vertex_workspace_t& m_vertexWorkspace;
-
-    int m_xsize;
-    int m_xyArea;
-
-    int m_blockColor;
-
-    frantic::graphics::vector3 m_blockCoord;
-
-    block_vertex_manager& operator=( const block_vertex_manager& ); // not implemented
 
     // init
     // "nonempty" function requires ( cubeCase != 0x00 && cubeCase != 0xff )
@@ -1718,34 +1668,24 @@ class block_vertex_manager {
         ImplicitSurfacePolicy& isp, const frantic::volumetrics::marching_cubes_table& mct,
         const frantic::graphics::vector3& blockCoord, const frantic::graphics::boundbox3& xyzExtents,
         const int blockColor, const std::vector<float>& voxelCornerDensities,
-        // const std::vector<exposed_voxel_vertices> & inVoxelVertices,
-        // const stdext::hash_map<vector3,std::pair<std::size_t,std::size_t>,voxel_coord_hasher> &
-        // blockCoordToVoxelVertices,
         const voxel_vertex_t& exposedVoxelVertices, std::vector<frantic::graphics::vector3>& outVertexIndices,
         std::vector<frantic::geometry::trimesh3_vertex_channel_general_accessor>& outNamedVertexChannels,
         frantic::geometry::trimesh3& outMesh,
-        // std::vector<detail::exposed_block_vertices> & outExposedBlockVertices,
         std::vector<detail::exposed_voxel_vertices>& outExposedBlockVertices,
         typename ImplicitSurfacePolicy::vertex_workspace_t& vertexWorkspace )
-        : m_isp( isp )
+        : m_vertexWorkspace( vertexWorkspace )
+        , m_isp( isp )
         , m_mct( mct )
         , m_voxelCornerDensities( voxelCornerDensities )
-        ,
-        // m_blockCoordToVoxelVertices( blockCoordToVoxelVertices ),
-        m_outNamedVertexChannels( outNamedVertexChannels )
+        , m_outNamedVertexChannels( outNamedVertexChannels )
         , m_outMesh( outMesh )
-        ,
-        // m_outExposedBlockVertices( outExposedBlockVertices ),
-        m_exposedVoxelVertices( exposedVoxelVertices )
-        , m_vertexWorkspace( vertexWorkspace )
-        ,
-        // m_voxelVertexCache( blockCoord, inVoxelVertices, blockCoordToVoxelVertices ),
-        m_xsize( xyzExtents.xsize() )
+        , m_exposedVoxelVertices( exposedVoxelVertices )
+        , m_outVoxelVertices( outExposedBlockVertices )
+        , m_outVertexIndices( outVertexIndices )
+        , m_xsize( xyzExtents.xsize() )
         , m_xyArea( xyzExtents.xsize() * xyzExtents.ysize() )
         , m_blockColor( blockColor )
-        , m_blockCoord( blockCoord )
-        , m_outVertexIndices( outVertexIndices )
-        , m_outVoxelVertices( outExposedBlockVertices ) {}
+        , m_blockCoord( blockCoord ) {}
     // init
     inline void add_interior_voxel_vertices(
         std::size_t i, boost::uint8_t cubeCase,
@@ -2090,8 +2030,12 @@ flush_mesh_buffer( std::vector<frantic::geometry::trimesh3_vertex_channel_genera
         // meshLock.acquire( meshMutex, false );
 
         if( buffer.vertex_count() ) {
-            memcpy( &outMesh.vertices_ref()[firstVertexNumber], &buffer.vertices_ref()[0],
-                    buffer.vertex_count() * sizeof( frantic::graphics::vector3f ) );
+
+            std::copy(
+                buffer.vertices_ref().begin(),
+                buffer.vertices_ref().begin() + buffer.vertex_count(),
+                outMesh.vertices_ref().begin() + firstVertexNumber
+            );
             for( std::size_t i = 0; i < outputChannels.size(); ++i ) {
                 frantic::geometry::trimesh3_vertex_channel_general_accessor& outputChannel = outputChannels[i];
                 frantic::geometry::trimesh3_vertex_channel_general_accessor& inputChannel = inputChannels[i];
@@ -2125,8 +2069,6 @@ void convert_particle_implicit_surface_to_trimesh3( ImplicitSurfacePolicy& mcp,
                                                     frantic::geometry::trimesh3& outMesh,
                                                     shared_progress_logger_proxy& progressLogger ) {
     static marching_cubes_table mct;
-
-    tbb::task_scheduler_init taskSchedulerInit;
 
     // Clear the mesh to start
     outMesh.clear();

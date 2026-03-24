@@ -10,10 +10,7 @@
 #include <frantic/math/reconstruction_filters.hpp>
 #include <frantic/volumetrics/levelset/rle_level_set.hpp>
 
-#pragma warning( push )
-#pragma warning( disable : 4512 4100 4245 )
 #include <tbb/spin_rw_mutex.h>
-#pragma warning( pop )
 
 namespace frantic {
 namespace volumetrics {
@@ -678,8 +675,8 @@ class reconstruction_filtered_rle_level_set_is_policy {
                                                      int vertexRefinement, const ReconstructionFilter& reconFilter,
                                                      int boundsClip = 1 )
         : m_levelSet( levelSet )
-        , m_meshingVCS( meshingVCS )
         , m_vertexRefinement( vertexRefinement )
+        , m_meshingVCS( meshingVCS )
         , m_reconFilter( reconFilter ) {
         frantic::graphics::boundbox3 voxelBounds = m_levelSet.get_rle_index_spec().outer_bounds();
         if( !boundsClip )
@@ -774,8 +771,6 @@ class reconstruction_filtered_rle_level_set_is_policy {
             isosurfaceLocationAlpha = 0.5f;
         else
             isosurfaceLocationAlpha = fabsf( density0 / densityDelta );
-        vector3 isosurfaceLocationVoxelCorner0 = voxelCorner0;
-        vector3 isosurfaceLocationVoxelCorner1 = voxelCorner1;
         return ( 1 - isosurfaceLocationAlpha ) * corner_sample_coord_to_world( voxelCorner0 ) +
                isosurfaceLocationAlpha * corner_sample_coord_to_world( voxelCorner1 );
     }

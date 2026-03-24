@@ -62,14 +62,14 @@ class Radian {
 
     // add or subtract an angle.
     Radian& operator+=( Radian const& rhs );
-    Radian& operator+( Radian const& rhs ) const;
+    Radian operator+( Radian const& rhs ) const;
     Radian& operator-=( Radian const& rhs );
-    Radian& operator-( Radian const& rhs ) const;
+    Radian operator-( Radian const& rhs ) const;
     // times a scalar.
     Radian& operator*=( double const rhs );
-    Radian& operator*( double const rhs ) const;
+    Radian operator*( double const rhs ) const;
     Radian& operator/=( double const rhs );
-    Radian& operator/( double const rhs ) const;
+    Radian operator/( double const rhs ) const;
 
     operator double() const;
     double magnitude() const;
@@ -118,34 +118,42 @@ inline Radian& Radian::operator+=( Radian const& rhs ) {
     m_angle = angleMod( m_angle + rhs.m_angle );
     return *this;
 }
-inline Radian& Radian::operator+( Radian const& rhs ) const {
-    Radian angle( m_angle );
-    return angle += rhs;
-}
 inline Radian& Radian::operator-=( Radian const& rhs ) {
     m_angle = angleMod( m_angle - rhs.m_angle );
     return *this;
-}
-inline Radian& Radian::operator-( Radian const& rhs ) const {
-    Radian angle( m_angle );
-    return angle -= rhs;
 }
 // times a scalar.
 inline Radian& Radian::operator*=( double const rhs ) {
     m_angle = angleMod( m_angle * rhs );
     return *this;
 }
-inline Radian& Radian::operator*( double const rhs ) const {
-    Radian angle( m_angle );
-    return angle *= rhs;
-}
 inline Radian& Radian::operator/=( double const rhs ) {
     m_angle = angleMod( m_angle / rhs );
     return *this;
 }
-inline Radian& Radian::operator/( double const rhs ) const {
-    Radian angle( m_angle );
-    return angle /= rhs;
+
+inline Radian Radian::operator+( Radian const& rhs ) const {
+    Radian result( *this );
+    result += rhs;
+    return result;
+}
+
+inline Radian Radian::operator-( Radian const& rhs ) const {
+    Radian result( *this );
+    result -= rhs;
+    return result;
+}
+
+inline Radian Radian::operator*( double rhs ) const {
+    Radian result( *this );
+    result *= rhs;
+    return result;
+}
+
+inline Radian Radian::operator/( double rhs ) const {
+    Radian result( *this );
+    result /= rhs;
+    return result;
 }
 
 // conversion to degrees.

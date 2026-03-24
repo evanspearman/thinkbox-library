@@ -189,7 +189,7 @@ class run_tree {
         // Check if the given extent size is a power of 2.  If it isn't
         // we need to pad it so that it is.
         int i = 1, nextPowerOf2 = 0, bitsFlagged = 0;
-        for( int c = 0; c < sizeof( int ) * 8 - 1; c++ ) {
+        for( std::size_t c = 0; c < sizeof( int ) * 8 - 1; c++ ) {
             if( m_extentSize & i ) {
                 nextPowerOf2 = i << 1;
                 bitsFlagged++;

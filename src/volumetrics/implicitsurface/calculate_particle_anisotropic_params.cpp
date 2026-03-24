@@ -110,13 +110,13 @@ struct particle_info_t {
     std::size_t index;
 
     particle_info_t()
-        : particle( 0 )
-        , index( 0 )
-        , position( 0 ) {}
+        : position( 0 )
+        , particle( 0 )
+        , index( 0 ) {}
     particle_info_t( std::size_t i, char* particle, const frantic::graphics::vector3f& position )
-        : particle( particle )
-        , index( i )
-        , position( position ) {}
+        : position( position )
+        , particle( particle )
+        , index( i ) {}
 };
 
 template <class ParticlePairProcessor, class voxel_info_t, class map_t>
@@ -126,8 +126,6 @@ class process_particle_pairs_in_range_impl {
     map_t& m_map;
     std::vector<frantic::graphics::vector3>& m_voxelCoords;
     frantic::volumetrics::implicitsurface::shared_progress_logger_proxy& m_progressLogger;
-
-    process_particle_pairs_in_range_impl& operator=( const process_particle_pairs_in_range_impl& ); // not implemented
 
   public:
     process_particle_pairs_in_range_impl(
@@ -216,9 +214,6 @@ class process_particle_pairs_in_range_impl {
 
 namespace {
 
-#pragma warning( push )
-// TODO : fix this instead of suppressing?
-#pragma warning( disable : 4608 ) // has already been initialized by another union member in the initializer list
 struct voxel_info_t {
     union {
         std::size_t particleCount;
@@ -231,7 +226,6 @@ struct voxel_info_t {
         end = 0;
     }
 };
-#pragma warning( pop )
 
 }; // anonymous namespace
 
@@ -244,15 +238,11 @@ template <class ParticlePairProcessor>
 void process_particle_pairs_in_range(
     frantic::particles::particle_array& particles, const float maxDistance, ParticlePairProcessor& processor,
     frantic::volumetrics::implicitsurface::shared_progress_logger_proxy& progressLogger ) {
-    tbb::task_scheduler_init taskScheduleInit;
 
-    typedef std::vector<particle_info_t> voxel_particles_t;
     typedef boost::unordered_map<frantic::graphics::vector3, voxel_info_t, voxel_coord_hasher> map_t;
 
     map_t map;
 
-    frantic::channels::channel_cvt_accessor<float> radiusAcc(
-        particles.get_channel_map().get_cvt_accessor<float>( _T("Radius") ) );
     frantic::channels::channel_cvt_accessor<frantic::graphics::vector3f> positionAcc(
         particles.get_channel_map().get_cvt_accessor<frantic::graphics::vector3f>( _T("Position") ) );
 
@@ -352,11 +342,11 @@ class smooth_particle_positions_impl {
                                     std::vector<frantic::graphics::vector3f>& outNewPosition )
         : m_radiusAcc( channelMap.get_const_cvt_accessor<float>( _T("Radius") ) )
         , m_positionAcc( channelMap.get_const_cvt_accessor<frantic::graphics::vector3f>( _T("Position") ) )
-        , m_effectRadiusScale( effectRadiusScale )
-        , m_lambda( lambda )
         , m_newPosition( outNewPosition )
+        , m_lambda( lambda )
+        , m_effectRadiusScale( effectRadiusScale )
         , m_kernel( kernel ) {}
-
+ 
     void start( particle_state_t& state, std::size_t particleNumber, char* particle ) {
         state.reset( particleNumber, particle, m_positionAcc( particle ),
                      m_effectRadiusScale * m_radiusAcc( particle ) );
@@ -447,13 +437,8 @@ class matrix33 {
         }
         return *this;
     }
-
-    matrix33<T>& operator=( const matrix33<T>& other ) {
-        if( &other != this ) {
-            memcpy( &m_elements[0], &other.m_elements[0], 9 * sizeof( T ) );
-        }
-        return *this;
-    }
+    matrix33( const matrix33& ) = default;
+    matrix33& operator=( const matrix33& ) = default;
 };
 
 template <class T>
@@ -490,18 +475,12 @@ class anisotropy_calculator_impl {
     float m_anisotropyRadiusScale;
     float m_kr;
     float m_kn;
-    // float m_ks;
     std::size_t m_neps;
-    // float m_maxmaxSigma;
-    // float m_minmaxSigma;
-    // float m_minvol;
-    // float m_maxvol;
 
     anisotropy_calculator_impl& operator=( const anisotropy_calculator_impl& ); // not implemented
   public:
     struct particle_anisotropy_state {
         frantic::graphics::vector3f centrePosition;
-        // float invScaledRadius2;
         float anisotropyWindowRadius2;
         float compactSupport2;
         std::size_t neighbourCount;
@@ -539,17 +518,15 @@ class anisotropy_calculator_impl {
                                 frantic::channels::channel_accessor<float>& invCompactSupportVolumeAcc )
         : m_positionAcc( channelMap.get_const_cvt_accessor<frantic::graphics::vector3f>( _T("Position") ) )
         , m_radiusAcc( channelMap.get_const_cvt_accessor<float>( _T("Radius") ) )
-        , m_compactSupportScale( effectRadiusScale )
-        , m_anisotropyRadiusScale( anisotropyRadiusScale )
         , m_maxSupportDistanceAcc( maxSupportDistanceAcc )
         , m_invCompactSupportVolumeAcc( invCompactSupportVolumeAcc )
+        , m_anisotropyAcc( anisotropyAcc )
+        , m_kernel( kernel )
+        , m_compactSupportScale( effectRadiusScale )
+        , m_anisotropyRadiusScale( anisotropyRadiusScale )
         , m_kr( kr )
         , m_kn( kn )
-        ,
-        // m_ks( ks ),
-        m_neps( nEps )
-        , m_kernel( kernel )
-        , m_anisotropyAcc( anisotropyAcc ) {
+        , m_neps( nEps ) {
         if( m_anisotropyAcc.arity() != 6 || m_anisotropyAcc.data_type() != frantic::channels::data_type_float32 ) {
             throw std::runtime_error(
                 "calculate_anisotropy Error: wrong data type for anisotropy channel.  Wanted float32[6], but got " +
@@ -557,11 +534,6 @@ class anisotropy_calculator_impl {
                     frantic::channels::channel_data_type_str( m_anisotropyAcc.arity(), m_anisotropyAcc.data_type() ) ) +
                 " instead." );
         }
-
-        // m_maxmaxSigma = 0;
-        // m_minmaxSigma = std::numeric_limits<float>::max();
-        // m_minvol = std::numeric_limits<float>::max();
-        // m_maxvol = 0;
     }
 
     void start( particle_state_t& state, std::size_t particleNumber, char* particle ) {
@@ -763,8 +735,8 @@ class volume_calculator_with_anisotropic_kernel_impl {
         : m_positionAcc( channelMap.get_accessor<frantic::graphics::vector3f>( _T("Position") ) )
         , m_radiusAcc( channelMap.get_accessor<float>( _T("Radius") ) )
         , m_volumeAcc( channelMap.get_accessor<float>( _T("__Volume") ) )
-        , m_anisotropyAcc( channelMap.get_general_accessor( _T("__Anisotropy") ) )
         , m_invCompactSupportVolumeAcc( channelMap.get_accessor<float>( _T("__invcsv") ) )
+        , m_anisotropyAcc( channelMap.get_general_accessor( _T("__Anisotropy") ) )
         , m_kernel( kernel )
         , m_outVolume( outVolume ) {}
 
@@ -806,8 +778,6 @@ void calculate_anisotropy( frantic::particles::particle_array& particles, float 
     const float kn = 1.33f / kr;
     frantic::channels::channel_cvt_accessor<float> radiusAcc(
         particles.get_channel_map().get_cvt_accessor<float>( _T("Radius") ) );
-    frantic::channels::channel_cvt_accessor<frantic::graphics::vector3f> positionAcc(
-        particles.get_channel_map().get_cvt_accessor<frantic::graphics::vector3f>( _T("Position") ) );
     frantic::channels::channel_accessor<float> maxSupportDistanceAcc =
         particles.get_channel_map().get_accessor<float>( _T("__MaxDistance") );
     frantic::channels::channel_accessor<float> invCompactSupportVolumeAcc =
@@ -858,9 +828,6 @@ void calculate_volume_with_anisotropic_kernel(
     using frantic::channels::channel_accessor;
     using frantic::channels::channel_general_accessor;
 
-    channel_accessor<float> radiusAcc( particles.get_channel_map().get_accessor<float>( _T("Radius") ) );
-    channel_accessor<frantic::graphics::vector3f> positionAcc(
-        particles.get_channel_map().get_accessor<frantic::graphics::vector3f>( _T("Position") ) );
     channel_accessor<float> volumeAcc( particles.get_channel_map().get_accessor<float>( volumeChannelName ) );
     channel_general_accessor anisotropyAcc( particles.get_channel_map().get_general_accessor( _T("__Anisotropy") ) );
     if( anisotropyAcc.arity() != 6 || anisotropyAcc.data_type() != frantic::channels::data_type_float32 ) {

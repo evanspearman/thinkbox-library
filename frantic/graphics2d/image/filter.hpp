@@ -3,6 +3,7 @@
 #pragma once
 
 #include <frantic/graphics2d/size2f.hpp>
+#include <frantic/graphics2d/size2.hpp>
 #include <vector>
 
 #include <frantic/math/filters.hpp>
@@ -139,7 +140,7 @@ class filter {
     }
 
     template <class ElementType>
-    static void apply_sobel( std::vector<ElementType>& outMap, const size2& mapSize ) {
+    static void apply_sobel( [[maybe_unused]] std::vector<ElementType>& outMap, [[maybe_unused]] const size2& mapSize ) {
         std::vector<float> filterX;
         std::vector<float> filterY;
     }

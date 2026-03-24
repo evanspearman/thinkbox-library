@@ -536,17 +536,8 @@ class trimesh3_vertex_channel {
     friend class trimesh3;
 
   public:
-    trimesh3_vertex_channel& operator=( const trimesh3_vertex_channel& rhs ) {
-        m_name = rhs.m_name;
-        m_arity = rhs.m_arity;
-        m_dataType = rhs.m_dataType;
-        m_primitiveSize = rhs.m_primitiveSize;
-        m_faces = rhs.m_faces;
-        m_data = rhs.m_data;
-        m_hasCustomFaces = rhs.m_hasCustomFaces;
-
-        return *this;
-    }
+    trimesh3_vertex_channel& operator=( const trimesh3_vertex_channel& rhs ) = default;
+    trimesh3_vertex_channel( const trimesh3_vertex_channel& rhs ) = default;
 
     std::size_t size() const { return m_data.size() / m_primitiveSize; }
 
@@ -1056,15 +1047,8 @@ class trimesh3_face_channel {
     friend class trimesh3;
 
   public:
-    trimesh3_face_channel& operator=( const trimesh3_face_channel& rhs ) {
-        m_name = rhs.m_name;
-        m_arity = rhs.m_arity;
-        m_dataType = rhs.m_dataType;
-        m_primitiveSize = rhs.m_primitiveSize;
-        m_data = rhs.m_data;
-
-        return *this;
-    }
+    trimesh3_face_channel& operator=( const trimesh3_face_channel& rhs ) = default;
+    trimesh3_face_channel( const trimesh3_face_channel& rhs ) = default;
 
     std::size_t size() const { return m_data.size() / m_primitiveSize; }
 

@@ -20,12 +20,10 @@
 #include <frantic/volumetrics/rle_plane.hpp>
 #include <frantic/volumetrics/run_tree.hpp>
 
-#pragma warning( push )
-#pragma warning( disable : 4512 4100 4244 4245 )
-#include <tbb/atomic.h>
 #include <tbb/spin_mutex.h>
 #include <tbb/spin_rw_mutex.h>
-#pragma warning( pop )
+
+#include <atomic>
 
 namespace frantic {
 namespace volumetrics {
@@ -33,14 +31,14 @@ namespace implicitsurface {
 
 class shared_progress_logger_proxy {
     boost::int32_t m_isCancelled;
-    char m_padding[60];
-    tbb::atomic<std::size_t> m_progress;
+    [[maybe_unused]] char m_padding[60];
+    std::atomic<std::size_t> m_progress;
     std::size_t m_progressEnd;
 
   public:
     shared_progress_logger_proxy()
-        : m_progressEnd( 100 )
-        , m_isCancelled( 0 ) {
+        : m_isCancelled( 0 )
+        , m_progressEnd( 100 ) {
         m_progress = 0;
     }
 

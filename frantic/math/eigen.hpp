@@ -29,31 +29,31 @@ inline int get_eigenvalues( float a, float b, float c, float d, float& outEigen1
 
 // helper functions for get_eigenvalues_symmetric_3x3
 namespace {
-int get_i_pp( int axis ) {
+inline int get_i_pp( int axis ) {
     int lut[] = { 3, 5, 0 };
     return lut[axis];
 }
-int get_i_qq( int axis ) {
+inline int get_i_qq( int axis ) {
     int lut[] = { 5, 0, 3 };
     return lut[axis];
 }
-int get_i_pq( int axis ) {
+inline int get_i_pq( int axis ) {
     int lut[] = { 4, 2, 1 };
     return lut[axis];
 }
-int get_i_rp( int axis ) {
+inline int get_i_rp( int axis ) {
     int lut[] = { 1, 4, 2 };
     return lut[axis];
 }
-int get_i_rq( int axis ) {
+inline int get_i_rq( int axis ) {
     int lut[] = { 2, 1, 4 };
     return lut[axis];
 }
-int get_i_p( int axis ) {
+inline int get_i_p( int axis ) {
     int lut[] = { 1, 2, 0 };
     return lut[axis];
 }
-int get_i_q( int axis ) {
+inline int get_i_q( int axis ) {
     int lut[] = { 2, 0, 1 };
     return lut[axis];
 }
@@ -166,7 +166,7 @@ void get_eigenvalues_symmetric_3x3( const T m[6], T& outEigen1, T& outEigen2, T&
  * @param[out] outVector3 an eigenvector of the matrix.
  * @param[out] outValues eigenvalues of the matrix.
  */
-template <class T>
+template <typename T>
 void eigendecompose_symmetric_3x3( const T m[6], T outVector1[3], T outVector2[3], T outVector3[3], T outValues[3] ) {
     const int iterMax = 50;
     const T thresh = 0;

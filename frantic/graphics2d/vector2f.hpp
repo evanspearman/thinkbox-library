@@ -35,7 +35,7 @@ class vector2f : public vector2t<float, vector2f> {
     vector2f& operator=(const vector2f&) = default;
 
     // TODO: We should use the boost random number generator for high quality and fast random numbers
-    static vector2f from_random() { return vector2f( (float)rand() / RAND_MAX, (float)rand() / RAND_MAX ); }
+    static vector2f from_random() { return vector2f( (float)rand() / static_cast<float>( RAND_MAX ), (float)rand() / static_cast<float>( RAND_MAX ) ); }
 
     template <class RandomNumberGenerator>
     static vector2f from_unit_disk_random( RandomNumberGenerator& rng ) {
@@ -151,7 +151,7 @@ class vector2f : public vector2t<float, vector2f> {
 
 inline vector2f vector2f::from_random_gaussian() {
     // Use the non-polar form of the box-muller transformation
-    float x = (float)rand() / RAND_MAX, y = (float)rand() / RAND_MAX;
+    float x = (float)rand() / static_cast<float>( RAND_MAX ), y = (float)rand() / static_cast<float>( RAND_MAX );
     double coefficient = sqrt( -2 * log( x ) );
     return vector2f( float( coefficient * cos( 2 * M_PI * y ) ), float( coefficient * sin( 2 * M_PI * y ) ) );
 }

@@ -795,7 +795,6 @@ void prt_file_header::write_header( std::ostream& out, const frantic::tstring& s
         if( name.size() >= sizeof( prtChannel.channelName ) ) {
             throw std::runtime_error( "PRT channel name is too long to fit in 32 bytes" );
         }
-        std::memset( prtChannel.channelName, 0, sizeof( prtChannel.channelName ) );
         std::memcpy( prtChannel.channelName, name.c_str(), name.size() );
         // fout << i << ") " << "Channel name " << m_particleChannelMap[i].name() << " copied " << std::endl;
         prtChannel.channelArity = (boost::int32_t)m_particleChannelMap[i].arity();

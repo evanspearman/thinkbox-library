@@ -27,8 +27,8 @@ class channel_accessor {
     channel_accessor()
         : m_offset( ( std::numeric_limits<std::size_t>::max )() ) {}
 
-    channel_accessor( const channel_accessor& accessor )
-        : m_offset( accessor.m_offset ) {}
+    channel_accessor( const channel_accessor& accessor ) = default;
+    channel_accessor& operator=( const channel_accessor& ) = default;
 
     channel_accessor( std::size_t offset )
         : m_offset( offset ) {}

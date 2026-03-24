@@ -331,8 +331,6 @@ class apply_lap_smooth {
     const std::vector<size_t>& m_subset;
     float m_scale;
 
-    apply_lap_smooth& operator=( const apply_lap_smooth& ); // not implemented
-
   public:
     apply_lap_smooth( std::vector<frantic::graphics::vector3f>& currVertices,
                       std::vector<frantic::graphics::vector3f>& prevVertices,
@@ -372,7 +370,8 @@ class apply_lap_mean_curve_smooth {
     float m_scale;
     float m_constant;
 
-    apply_lap_mean_curve_smooth& operator=( const apply_lap_mean_curve_smooth& ); // not implemented
+    // apply_lap_mean_curve_smooth( const apply_lap_mean_curve_smooth& ) = default;
+    // apply_lap_mean_curve_smooth& operator=( const apply_lap_mean_curve_smooth& ) = default;
 
   public:
     apply_lap_mean_curve_smooth( std::vector<frantic::graphics::vector3f>& currVertices,
@@ -407,7 +406,8 @@ class apply_adaptive_reg_smooth {
     float m_scale;
     float m_epsilon;
 
-    apply_adaptive_reg_smooth& operator=( const apply_adaptive_reg_smooth& ); // not implemented
+    // apply_adaptive_reg_smooth( const apply_adaptive_reg_smooth& ) = delete;
+    // apply_adaptive_reg_smooth& operator=( const apply_adaptive_reg_smooth& ) = delete;
 
   public:
     apply_adaptive_reg_smooth( std::vector<frantic::graphics::vector3f>& currVertices,
@@ -452,7 +452,6 @@ class apply_laplacian_smooth_mesh_interface {
     const std::vector<size_t>& m_vertexSubset;
     float_type m_scale;
 
-    apply_laplacian_smooth_mesh_interface& operator=( const apply_laplacian_smooth_mesh_interface& ); // not implemented
   public:
     apply_laplacian_smooth_mesh_interface( const std::vector<vector_type>& inputPoints,
                                            mesh_channel_cvt<vector_type>& channel, mesh_interface* mesh,
@@ -543,8 +542,6 @@ class copy_mesh_channel_vertices {
     std::vector<vector_type>& m_inputPoints;
     const mesh_channel_cvt<vector_type>& m_meshChannel;
 
-    copy_mesh_channel_vertices& operator=( const copy_mesh_channel_vertices& );
-
   public:
     copy_mesh_channel_vertices( std::vector<vector_type>& inputPoints, const mesh_channel_cvt<VectorType>& meshChannel )
         : m_inputPoints( inputPoints )
@@ -599,8 +596,6 @@ void laplacian_smooth( frantic::geometry::trimesh3& mesh, std::size_t iterationC
 
 void laplacian_smooth( frantic::geometry::trimesh3& mesh, std::size_t iterationCount, float scale,
                        const std::vector<size_t>& subset ) {
-    tbb::task_scheduler_init taskScheduleInit;
-
     // clamp weight to [0..1]
     if( scale > 1 )
         scale = 1.f;
@@ -629,8 +624,6 @@ void laplacian_smooth( frantic::geometry::mesh_interface* mesh, std::size_t iter
 
 void laplacian_smooth( frantic::geometry::mesh_interface* mesh, const frantic::geometry::mesh_channel* channel,
                        std::size_t iterationCount, double scale ) {
-    tbb::task_scheduler_init taskScheduleInit;
-
     frantic::geometry::mesh_channel* unconst = const_cast<frantic::geometry::mesh_channel*>( channel );
 
     scale = frantic::math::clamp( scale, 0.0, 1.0 );
@@ -682,8 +675,6 @@ void laplacian_smooth( frantic::geometry::mesh_interface* mesh, const frantic::g
  */
 void laplacian_mean_curvature_smooth( frantic::geometry::trimesh3& mesh, std::size_t iterationCount, float scale,
                                       float constant ) {
-    tbb::task_scheduler_init taskScheduleInit;
-
     std::vector<std::vector<frantic::graphics::vector3>> adjFaces;
     std::vector<std::vector<int>> adjVertices;
 
@@ -720,8 +711,6 @@ void laplacian_mean_curvature_smooth( frantic::geometry::trimesh3& mesh, std::si
  */
 void adaptive_regularizing_mean_curvature_smooth( frantic::geometry::trimesh3& mesh, std::size_t iterationCount,
                                                   float scale, float epsilon ) {
-    tbb::task_scheduler_init taskScheduleInit;
-
     std::vector<std::vector<frantic::graphics::vector3>> adjFaces;
     std::vector<std::vector<int>> adjVertices;
 

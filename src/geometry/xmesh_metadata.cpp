@@ -12,6 +12,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/array.hpp>
 #include <boost/foreach.hpp>
 
 namespace frantic {
@@ -69,7 +70,7 @@ const char* get_transform_type_string( xmesh_metadata::transform_type_t transfor
         return "normal";
     default:
         throw std::runtime_error( "get_transform_type_string Error: unknown transform type " +
-                                  boost::lexical_cast<std::string>( transformType ) );
+                                  boost::lexical_cast<std::string>( static_cast<int>( transformType ) ) );
     }
 }
 
@@ -127,7 +128,7 @@ std::string get_length_unit_string( xmesh_metadata::length_unit_t lengthUnit ) {
         return "km";
     default:
         throw std::runtime_error( "get_length_unit_string: invalid length unit: " +
-                                  boost::lexical_cast<std::string>( lengthUnit ) );
+                                  boost::lexical_cast<std::string>( static_cast<int>( lengthUnit ) ) );
     }
 }
 
@@ -178,46 +179,46 @@ double get_to_meter_conversion_factor( xmesh_metadata::length_unit_t from ) {
         return 1000.0;
     default:
         throw std::runtime_error( "get_to_meter_conversion_factor: Unknown unit: " +
-                                  boost::lexical_cast<std::string>( from ) );
+                                  boost::lexical_cast<std::string>( static_cast<int>( from ) ) );
     }
 }
 
-boost::rational<boost::int64_t> get_to_meter_conversion_fraction( xmesh_metadata::length_unit_t from ) {
-    switch( from ) {
-    case xmesh_metadata::length_unit_unitless:
-        return boost::rational<boost::int64_t>( 1, 1 );
-    case xmesh_metadata::length_unit_inches:
-        return boost::rational<boost::int64_t>( 254, 10000 );
-    case xmesh_metadata::length_unit_feet:
-        return boost::rational<boost::int64_t>( 12 * 254, 10000 );
-    case xmesh_metadata::length_unit_miles:
-        return boost::rational<boost::int64_t>( 5280 * 12 * 254, 10000 );
-    case xmesh_metadata::length_unit_millimeters:
-        return boost::rational<boost::int64_t>( 1, 1000 );
-    case xmesh_metadata::length_unit_centimeters:
-        return boost::rational<boost::int64_t>( 1, 100 );
-    case xmesh_metadata::length_unit_meters:
-        return boost::rational<boost::int64_t>( 1, 1 );
-    case xmesh_metadata::length_unit_kilometers:
-        return boost::rational<boost::int64_t>( 1000, 1 );
-    default:
-        throw std::runtime_error( "get_to_meter_conversion_factor: Unknown unit: " +
-                                  boost::lexical_cast<std::string>( from ) );
-    }
-}
+// boost::rational<boost::int64_t> get_to_meter_conversion_fraction( xmesh_metadata::length_unit_t from ) {
+//     switch( from ) {
+//     case xmesh_metadata::length_unit_unitless:
+//         return boost::rational<boost::int64_t>( 1, 1 );
+//     case xmesh_metadata::length_unit_inches:
+//         return boost::rational<boost::int64_t>( 254, 10000 );
+//     case xmesh_metadata::length_unit_feet:
+//         return boost::rational<boost::int64_t>( 12 * 254, 10000 );
+//     case xmesh_metadata::length_unit_miles:
+//         return boost::rational<boost::int64_t>( 5280 * 12 * 254, 10000 );
+//     case xmesh_metadata::length_unit_millimeters:
+//         return boost::rational<boost::int64_t>( 1, 1000 );
+//     case xmesh_metadata::length_unit_centimeters:
+//         return boost::rational<boost::int64_t>( 1, 100 );
+//     case xmesh_metadata::length_unit_meters:
+//         return boost::rational<boost::int64_t>( 1, 1 );
+//     case xmesh_metadata::length_unit_kilometers:
+//         return boost::rational<boost::int64_t>( 1000, 1 );
+//     default:
+//         throw std::runtime_error( "get_to_meter_conversion_factor: Unknown unit: " +
+//                                   boost::lexical_cast<std::string>( static_cast<int>( from ) ) );
+//     }
+// }
 
-double get_from_meter_conversion_factor( xmesh_metadata::length_unit_t to ) {
-    return 1.0 / get_to_meter_conversion_factor( to );
-}
+// double get_from_meter_conversion_factor( xmesh_metadata::length_unit_t to ) {
+//     return 1.0 / get_to_meter_conversion_factor( to );
+// }
 
-boost::rational<boost::int64_t> get_from_meter_conversion_fraction( xmesh_metadata::length_unit_t to ) {
-    return 1 / get_to_meter_conversion_fraction( to );
-}
+// boost::rational<boost::int64_t> get_from_meter_conversion_fraction( xmesh_metadata::length_unit_t to ) {
+//     return 1 / get_to_meter_conversion_fraction( to );
+// }
 
-double get_length_unit_conversion_factor( xmesh_metadata::length_unit_t from, xmesh_metadata::length_unit_t to ) {
-    return boost::rational_cast<double>( get_to_meter_conversion_fraction( from ) *
-                                         get_from_meter_conversion_fraction( to ) );
-}
+// double get_length_unit_conversion_factor( xmesh_metadata::length_unit_t from, xmesh_metadata::length_unit_t to ) {
+//     return boost::rational_cast<double>( get_to_meter_conversion_fraction( from ) *
+//                                          get_from_meter_conversion_fraction( to ) );
+// }
 
 // TODO: these are shared with xmesh_writer.cpp.  Move them somewhere in common.
 inline std::string utf8_from_channel_name( const std::string& s ) {
@@ -228,7 +229,7 @@ inline std::string utf8_from_channel_name( const std::string& s ) {
     }
 }
 
-inline std::string utf8_from_channel_name( const std::wstring& s ) { return frantic::strings::to_utf8( s ); }
+// inline std::string utf8_from_channel_name( const std::wstring& s ) { return frantic::strings::to_utf8( s ); }
 
 } // anonymous namespace
 

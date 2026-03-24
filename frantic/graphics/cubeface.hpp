@@ -263,7 +263,7 @@ inline frantic::graphics2d::vector2f get_cube_face_coordinate( const vector3f& v
         return frantic::graphics2d::vector2f( -v.x / v.z, -v.y / v.z );
     default:
         throw std::runtime_error( "vector3f::get_cube_face_coordinate: Provided invalid cube face value " +
-                                  boost::lexical_cast<std::string>( cubeFace ) );
+                                  boost::lexical_cast<std::string>( static_cast<int>( cubeFace ) ) );
     }
 }
 
@@ -295,7 +295,7 @@ get_cube_face_coordinate_and_zdepth( const vector3f& v, cube_face::default_cube_
         return frantic::graphics2d::vector2f( -v.x / v.z, -v.y / v.z );
     default:
         throw std::runtime_error( "vector3f::get_cube_face_coordinate: Provided invalid cube face value " +
-                                  boost::lexical_cast<std::string>( cubeFace ) );
+                                  boost::lexical_cast<std::string>( static_cast<int>( cubeFace ) ) );
     }
 }
 
@@ -583,7 +583,7 @@ get_hemisphere_face_coordinate( const vector3f& v, hemisphere_face::default_hemi
         return frantic::graphics2d::vector2f( -v.x / v.z, -v.y / v.z );
     default:
         throw std::runtime_error( "vector2f::get_hemisphere_face_coordinate: Provided invalid hemisphere face value " +
-                                  boost::lexical_cast<std::string>( hemisphereFace ) );
+                                  boost::lexical_cast<std::string>( static_cast<int>( hemisphereFace ) ) );
     }
 }
 } // namespace graphics

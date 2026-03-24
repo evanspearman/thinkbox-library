@@ -174,7 +174,7 @@ void polymesh3::init( polymesh3_channel_data vertData, polymesh3_channel_faces g
 
     if( vertData.type() != frantic::channels::data_type_float32 ) {
         throw std::runtime_error( "polymesh3::init() The vertex data has an unexpected type (" +
-                                  boost::lexical_cast<std::string>( vertData.type() ) + ")" );
+                                  boost::lexical_cast<std::string>( static_cast<int>( vertData.type() ) ) + ")" );
     }
 
     if( vertData.arity() != 3 ) {
@@ -2076,7 +2076,7 @@ frantic::geometry::polymesh3_ptr explode_custom_faces( const frantic::geometry::
                 throw std::runtime_error( "explode_custom_faces Error: channel "
                                           "\"" +
                                           frantic::strings::to_string( i->first ) + "\" has unexpected type: " +
-                                          boost::lexical_cast<std::string>( channelType ) );
+                                          boost::lexical_cast<std::string>( static_cast<int>( channelType ) ) );
             }
         }
     }

@@ -55,7 +55,7 @@ inline std::wstring wstring_from_channel_name( const std::string& s ) {
     }
 }
 
-inline const std::wstring& wstring_from_channel_name( const std::wstring& s ) { return s; }
+// inline const std::wstring& wstring_from_channel_name( const std::wstring& s ) { return s; }
 
 inline std::string utf8_from_channel_name( const std::string& s ) {
     if( frantic::strings::is_valid_utf8( s ) ) {
@@ -65,7 +65,7 @@ inline std::string utf8_from_channel_name( const std::string& s ) {
     }
 }
 
-inline std::string utf8_from_channel_name( const std::wstring& s ) { return frantic::strings::to_utf8( s ); }
+// inline std::string utf8_from_channel_name( const std::wstring& s ) { return frantic::strings::to_utf8( s ); }
 
 #ifndef FRANTIC_DISABLE_THREADS
 // A simple thread pool for saving xmesh channels in parallel.

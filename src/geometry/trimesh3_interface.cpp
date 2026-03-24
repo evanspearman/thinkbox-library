@@ -13,6 +13,8 @@
 
 #include <frantic/misc/hybrid_assert.hpp>
 
+#include <stdexcept>
+
 namespace frantic {
 namespace geometry {
 
@@ -397,11 +399,11 @@ std::size_t trimesh3_interface_impl::get_face_prev_vertex( face_iterator& fIt ) 
 }
 
 vertex_adjacency_interface& trimesh3_interface_impl::get_vertex_adjacency() {
-    return *static_cast<vertex_adjacency_interface*>( NULL );
+    throw std::runtime_error( "trimesh3_interface::get_vertex_adjacency() not implemented" );
 }
 
 face_adjacency_interface& trimesh3_interface_impl::get_face_adjacency() {
-    return *static_cast<face_adjacency_interface*>( NULL );
+    throw std::runtime_error( "trimesh3_interface::get_face_adjacency() not implemented" );
 }
 
 void trimesh3_interface_impl::init_iterator_data() {
