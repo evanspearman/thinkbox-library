@@ -13,7 +13,10 @@
           inherit system;
         };
 
-        thinkboxlibrary = pkgs.callPackage ./package.nix { };
+        llvm = pkgs.llvmPackages_latest;
+        thinkboxlibrary = pkgs.callPackage ./package.nix {
+          stdenv = pkgs.clangStdenv;
+        };
       in {
         packages = {
           default = thinkboxlibrary;
@@ -23,19 +26,19 @@
         devShells.default = pkgs.mkShell {
           inputsFrom = [ thinkboxlibrary ];
 
-          nativeBuildInputs = with pkgs; [
-            cmake
-            ninja
-            pkg-config
-            clang-tools
-            gdb
+          packages = [
+            llvm.clang
+            llvm.lld
+            pkgs.cmake
+            pkgs.ninja
+            pkgs.pkg-config
+            pkgs.clang-tools
           ];
 
           shellHook = ''
-            echo "ThinkboxLibrary dev shell"
-            echo "Configure with: cmake -S . -B build -G Ninja"
-            echo "Build with:     cmake --build build"
-            echo "Test with:      ctest --test-dir build"
+            export CC="${llvm.clang}/bin/clang"
+            export CXX="${llvm.clang}/bin/clang++"
+            export CXXFLAGS="-fcolor-diagnostics"
           '';
         };
       });
