@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // clang-format off
 #include "stdafx.h"
+#include <random>
+#include <stdexcept>
 // clang-format on
 
 // Problem with C++11 and linking Boost Filesystem -> undefined reference to copy_file(). This function uses
@@ -25,7 +27,8 @@
 #if defined( LZ4_AVAILABLE )
 #include <lz4.h>
 #endif
-#include <zlib.h>
+
+#include <filesystem>
 
 using namespace std;
 using namespace frantic;
@@ -36,7 +39,7 @@ using frantic::graphics::raw_byte_buffer;
 
 class prt2_ostream_exception : public virtual boost::exception, public virtual std::exception {
   public:
-    typedef boost::error_info<struct tag_target_file, boost::filesystem::path> errinfo_target_file;
+    typedef boost::error_info<struct tag_target_file, std::filesystem::path> errinfo_target_file;
     typedef boost::error_info<struct tag_target_file, std::string> errinfo_message;
 
     virtual const char* what() const throw() { return boost::diagnostic_information_what( *this ); }
@@ -176,24 +179,44 @@ void prt2_writer::write_header() {
     write_prt2_channels( *m_file, m_streamname, m_fileParticleChannelMap );
 }
 
+std::filesystem::path make_unique_path(
+    const std::filesystem::path& baseDir,
+    const std::wstring& base
+) {
+    static thread_local std::mt19937_64 rng { std::random_device {}() };
+    std::uniform_int_distribution<uint64_t> dist;
+
+    for (int i = 0; i < 100; ++i) {
+        std::wstringstream ss;
+        ss << base << L"."
+           << std::hex << dist(rng)
+           << L".tmp";
+        auto candidate = baseDir / ss.str();
+        if (!std::filesystem::exists(candidate)) {
+            return candidate;
+        }
+    }
+    throw std::runtime_error("Failed to generate unique path");
+}
+
 void prt2_writer::initialize_temp_file_state( bool useTempFile, const frantic::tstring& filename,
-                                              const boost::filesystem::path& tempDir ) {
+                                              const std::filesystem::path& tempDir ) {
     m_useTempFile = useTempFile;
     if( !m_useTempFile ) {
         m_streamname = filename;
-        m_targetFile = boost::filesystem::path( filename );
-        m_tempLocalFile = boost::filesystem::path( filename );
-        m_tempRemoteFile = boost::filesystem::path( filename );
+        m_targetFile = std::filesystem::path( filename );
+        m_tempLocalFile = std::filesystem::path( filename );
+        m_tempRemoteFile = std::filesystem::path( filename );
         return;
     }
 
     if( !tempDir.empty() ) {
         m_tempDir = tempDir;
     } else {
-        m_tempDir = boost::filesystem::temp_directory_path();
+        m_tempDir = std::filesystem::temp_directory_path();
     }
 
-    m_targetFile = boost::filesystem::path( filename );
+    m_targetFile = std::filesystem::path( filename );
     bool useTempfolder = true;
 #ifdef _WIN32
     if( !PathIsUNCW( m_targetFile.c_str() ) ) {
@@ -238,18 +261,18 @@ void prt2_writer::initialize_temp_file_state( bool useTempFile, const frantic::t
 #endif
 
     assert( !useTempfolder ||
-            ( boost::filesystem::exists( m_tempDir ) && boost::filesystem::is_directory( m_tempDir ) ) );
+            ( std::filesystem::exists( m_tempDir ) && std::filesystem::is_directory( m_tempDir ) ) );
 
     try {
-        m_tempRemoteFile = boost::filesystem::unique_path(
-            m_targetFile.parent_path() / ( m_targetFile.filename().wstring() + L".%%%%-%%%%-%%%%-%%%%.tmp" ) );
+        m_tempRemoteFile = make_unique_path(
+            m_targetFile.parent_path(), ( m_targetFile.filename().wstring() + L".%%%%-%%%%-%%%%-%%%%.tmp" ) );
         if( useTempfolder ) {
-            m_tempLocalFile = boost::filesystem::unique_path(
-                m_tempDir / ( m_targetFile.filename().wstring() + L".%%%%-%%%%-%%%%-%%%%.tmp" ) );
+            m_tempLocalFile = make_unique_path(
+                m_tempDir, ( m_targetFile.filename().wstring() + L".%%%%-%%%%-%%%%-%%%%.tmp" ) );
         } else {
             m_tempLocalFile = m_tempRemoteFile;
         }
-    } catch( boost::filesystem::filesystem_error& e ) {
+    } catch( std::filesystem::filesystem_error& e ) {
         throw prt2_ostream_exception() << prt2_ostream_exception::errinfo_target_file( m_targetFile )
                                        << boost::errinfo_errno( e.code().value() )
                                        << prt2_ostream_exception::errinfo_message( e.code().message() )
@@ -258,13 +281,14 @@ void prt2_writer::initialize_temp_file_state( bool useTempFile, const frantic::t
     }
 
     // Give this stream a name that indicates both the temporary file path and the target file path.
+    // 
     m_streamname =
-        m_targetFile.string<frantic::tstring>() + _T(" via temp file: ") + m_tempLocalFile.string<frantic::tstring>();
+        m_targetFile.native() + _T(" via temp file: ") + m_tempLocalFile.native();
 }
 
 void prt2_writer::open( const frantic::tstring& filename, const channels::channel_map& particleChannelMap,
-                        bool useTempFile, const boost::filesystem::path& tempDir ) {
-    initialize_temp_file_state( useTempFile, filename, tempDir );
+                        bool useTempFile, const std::filesystem::path& tempDir ) {
+    initialize_temp_file_state( useTempFile, filename, std::filesystem::path( tempDir ) );
     m_file.reset( new fstream( m_tempLocalFile.c_str(), ios::out | ios::binary ) );
     create_packed_channel_map( particleChannelMap, m_fileParticleChannelMap );
     write_header();
@@ -272,7 +296,7 @@ void prt2_writer::open( const frantic::tstring& filename, const channels::channe
 
 void prt2_writer::open( std::ostream* os, const frantic::tstring& filename,
                         const channels::channel_map& particleChannelMap ) {
-    initialize_temp_file_state( false, filename, boost::filesystem::path() );
+    initialize_temp_file_state( false, filename, std::filesystem::path() );
     m_file.reset( os );
     create_packed_channel_map( particleChannelMap, m_fileParticleChannelMap );
     write_header();
@@ -301,51 +325,51 @@ void prt2_writer::close() {
                 boost::system::error_code errcode;
 
                 if( m_tempLocalFile != m_tempRemoteFile ) {
-                    boost::filesystem::rename( m_tempLocalFile, m_tempRemoteFile, errcode );
+                    std::filesystem::rename( m_tempLocalFile, m_tempRemoteFile, errcode );
                     if( errcode ) {
                         if( errcode != boost::system::errc::cross_device_link )
-                            BOOST_THROW_EXCEPTION( boost::filesystem::filesystem_error(
+                            BOOST_THROW_EXCEPTION( std::filesystem::filesystem_error(
                                 "PRT2 writer failed to rename local temp file to remote location", m_tempLocalFile,
                                 m_tempRemoteFile, errcode ) );
 
                         // If the error is a result of a cross-device link error, we must perform a copy-remove instead.
                         // We want to fail if the file exists in the remote destination since we chosen an appropriately
                         // random name that its a problem if that file now exists.
-                        boost::filesystem::copy_file( m_tempLocalFile, m_tempRemoteFile,
-                                                      boost::filesystem::copy_option::fail_if_exists, errcode );
+                        std::filesystem::copy_file( m_tempLocalFile, m_tempRemoteFile,
+                                                      std::filesystem::copy_options::none, errcode );
                         if( errcode )
-                            BOOST_THROW_EXCEPTION( boost::filesystem::filesystem_error(
+                            BOOST_THROW_EXCEPTION( std::filesystem::filesystem_error(
                                 "PRT2 writer failed to copy local temp file to remote location", m_tempLocalFile,
                                 m_tempRemoteFile, errcode ) );
 
-                        boost::filesystem::remove( m_tempLocalFile, errcode );
+                        std::filesystem::remove( m_tempLocalFile, errcode );
                         if( errcode )
                             FF_LOG( error ) << _T("PRT2 writer failed to remove local temp file: ")
-                                            << m_tempLocalFile.string<frantic::tstring>() << _T(" after copying to ")
-                                            << m_tempRemoteFile.string<frantic::tstring>() << std::endl;
+                                            << m_tempLocalFile.native() << _T(" after copying to ")
+                                            << m_tempRemoteFile.native() << std::endl;
                     }
                 }
 
                 // Delete the target file (if it exists) so that we can rename our new file to the final name it needs.
-                boost::filesystem::remove( m_targetFile, errcode );
+                std::filesystem::remove( m_targetFile, errcode );
                 if( errcode ) {
-                    BOOST_THROW_EXCEPTION( boost::filesystem::filesystem_error(
+                    BOOST_THROW_EXCEPTION( std::filesystem::filesystem_error(
                         "PRT2 writer failed to remove existing file with target filename", m_targetFile, errcode ) );
                 }
 
-                boost::filesystem::rename( m_tempRemoteFile, m_targetFile, errcode );
+                std::filesystem::rename( m_tempRemoteFile, m_targetFile, errcode );
                 if( errcode ) {
-                    BOOST_THROW_EXCEPTION( boost::filesystem::filesystem_error(
+                    BOOST_THROW_EXCEPTION( std::filesystem::filesystem_error(
                         "PRT2 writer failed to rename remote temp file to target filename", m_tempRemoteFile,
                         m_targetFile, errcode ) );
                 }
             } else {
                 m_file.reset();
-                if( boost::filesystem::exists( m_tempLocalFile ) ) {
-                    boost::filesystem::remove( m_tempLocalFile );
+                if( std::filesystem::exists( m_tempLocalFile ) ) {
+                    std::filesystem::remove( m_tempLocalFile );
                 }
-                if( boost::filesystem::exists( m_tempRemoteFile ) ) {
-                    boost::filesystem::remove( m_tempRemoteFile );
+                if( std::filesystem::exists( m_tempRemoteFile ) ) {
+                    std::filesystem::remove( m_tempRemoteFile );
                 }
             }
         }
@@ -358,157 +382,95 @@ void prt2_writer::close() {
     m_writtenParticleStreamNames.clear();
 }
 
-/**
- * Transposes particle chunks from the chunk generator if a transposing step was specified.
- */
-class chunk_transposer : public tbb::filter, boost::noncopyable {
-    const std::size_t m_particleSize;
 
-  public:
-    chunk_transposer( std::size_t particleSize )
-        : tbb::filter( false )
-        , m_particleSize( particleSize ) {}
 
-    void* operator()( void* item ) {
-        // Skip ignore chunks and termination chunks.
-        if( item == &prt2_writer::IGNORE_CHUNK || item == &prt2_writer::TERMINATION_CHUNK ) {
-            return item;
-        }
-
-        // Wrap the chunk in an unique_ptr to prevent memory leaks in case this function exits with an error or is
-        // cancelled.
-        std::unique_ptr<prt2_writer::particle_chunk> chunk( reinterpret_cast<prt2_writer::particle_chunk*>( item ) );
-
-        // Skip zero-sized chunks.
-        if( chunk->particleCount == 0 ) {
-            return chunk.release();
-        }
-
-        std::vector<char> transposeBuffer;
-        transposeBuffer.resize( chunk->uncompressed.size() );
-        transpose_bytes_forward( m_particleSize, chunk->particleCount, &chunk->uncompressed[0], &transposeBuffer[0] );
-
-        chunk->uncompressed.swap( transposeBuffer );
-
-        return chunk.release();
+void prt2_writer::chunk_writer::begin_particle_chunks() {
+    if( m_compressionScheme < 0 || m_compressionScheme >= prt2_compression_count ) {
+        stringstream ss;
+        ss << "prt2_writer: Unsupported PRT2 compression scheme " << m_compressionScheme
+           << " while writing to output stream \"" << to_string( m_fileStreamName ) << "\"";
+        throw runtime_error( ss.str() );
     }
-};
 
-/**
- * The chunk compressor is a filter that takes in particle chunks provided by the chunk generator or transposer and
- * compresses them before they are handed off to the chunk_writer.
- */
-namespace chunk_compressors {
-class zlib_compression;
-#if defined( LZ4_AVAILABLE )
-class lz4_compression;
-#endif
+    m_particleCount = 0;
+    m_particleChunkCount = 0;
 
-// zlib compressor.
-class zlib_compression : public tbb::filter, boost::noncopyable {
-    const frantic::tstring m_streamname;
+    // The filechunk header
+    boost::uint32_t chunkName = ( m_usePositionOffset ? PRT2_FILECHUNK_NAME_PrtO : PRT2_FILECHUNK_NAME_Part );
+    m_outputStream.write( reinterpret_cast<const char*>( &chunkName ), 4u );
+    m_prtsChunkSizeSeek = m_outputStream.tellp();
+    boost::uint64_t chunkSize = 0xffffffffffffffffULL; // Gets fixed up later
+    m_outputStream.write( reinterpret_cast<const char*>( &chunkSize ), 8u );
 
-  public:
-    zlib_compression( const frantic::tstring& streamname )
-        : tbb::filter( false )
-        , m_streamname( streamname ) {}
+    // The 'Part'/'PrtO' header
+    serialize::write_varstring( m_outputStream, m_particleStreamName );
+    serialize::write_compression_scheme( m_outputStream, m_compressionScheme );
+    m_prtsParticleCountSeek = m_outputStream.tellp();
+    boost::uint64_t particleCount = 0xffffffffffffffffULL; // Gets fixed up later
+    m_outputStream.write( reinterpret_cast<const char*>( &particleCount ), 8u );
+    boost::uint64_t particleChunkCount = 0xffffffffffffffffULL; // Gets fixed up later
+    m_outputStream.write( reinterpret_cast<const char*>( &particleChunkCount ), 8u );
+}
 
-    void* operator()( void* item ) {
-        // Skip ignore chunks and termination chunks.
-        if( item == &prt2_writer::IGNORE_CHUNK || item == &prt2_writer::TERMINATION_CHUNK ) {
-            return item;
+std::shared_ptr<prt2_writer::chunk_writer>
+prt2_writer::make_chunk_writer( boost::uint64_t totalParticleCount,
+                                frantic::logging::progress_logger& progress,
+                                const frantic::tstring& particleStreamName,
+                                bool usePositionOffset,
+                                prt2_compression_t compressionScheme ) {
+    if( m_writtenParticleStreamNames.find( particleStreamName ) != m_writtenParticleStreamNames.end() ) {
+        stringstream ss;
+        ss << "prt2_writer: Internal error: already wrote a ";
+        if( particleStreamName.empty() ) {
+            ss << "default";
+        } else {
+            ss << "named \"" << to_string( particleStreamName ) << "\"";
         }
-
-        // Wrap the chunk in an unique_ptr to prevent memory leaks in case this function exits with an error or is
-        // cancelled.
-        std::unique_ptr<prt2_writer::particle_chunk> chunk( reinterpret_cast<prt2_writer::particle_chunk*>( item ) );
-
-        // Skip zero-sized chunks.
-        if( chunk->particleCount == 0 ) {
-            return chunk.release();
-        }
-
-        size_t chunkSizeUncompressed = chunk->uncompressed.size();
-        uLongf chunkSize = compressBound( static_cast<uLongf>( chunkSizeUncompressed ) );
-        // Detect overflow by making sure the compressBound function returned a value that's bigger
-        if( chunkSize < chunkSizeUncompressed || ( chunkSize & ~0xffffffffULL ) != 0 ) {
-            stringstream ss;
-            ss << "prt2_file_writer: Tried to write a particle chunk to output stream \"" << to_string( m_streamname )
-               << "\" which was too big";
-            throw runtime_error( ss.str() );
-        }
-
-        chunk->compressed.resize( chunkSize );
-        if( compress( reinterpret_cast<Bytef*>( &chunk->compressed[0] ), &chunkSize,
-                      reinterpret_cast<const Bytef*>( &chunk->uncompressed[0] ),
-                      static_cast<uLongf>( chunkSizeUncompressed ) ) != Z_OK ) {
-            stringstream ss;
-            ss << "prt2_file_writer: ZLib compression failure writing to output stream \"" << to_string( m_streamname )
-               << "\"";
-            throw runtime_error( ss.str() );
-        }
-        chunk->compressed.resize( chunkSize );
-
-        return chunk.release();
+        ss << " 'Part'/'PrtO' filechunk to output stream \"" << to_string( m_streamname ) << "\"";
+        throw runtime_error( ss.str() );
     }
-};
+    m_writtenParticleStreamNames.insert( particleStreamName );
 
-#if defined( LZ4_AVAILABLE )
-// lz4 compressor.
-class lz4_compression : public tbb::filter, boost::noncopyable {
-    const frantic::tstring m_streamname;
+    return std::make_shared<chunk_writer>(
+        /**this,*/ *m_file, m_streamname, particleStreamName,
+        usePositionOffset, compressionScheme, totalParticleCount, progress );
+}
 
-  public:
-    lz4_compression( const frantic::tstring& streamname )
-        : tbb::filter( false )
-        , m_streamname( streamname ) {}
 
-    void* operator()( void* item ) {
-        // Skip ignore chunks and termination chunks.
-        if( item == &prt2_writer::IGNORE_CHUNK || item == &prt2_writer::TERMINATION_CHUNK ) {
-            return item;
-        }
+void prt2_writer::chunk_writer::end_particle_chunks() {
+    // Seek back and rewrite the chunk size, particle count, and particle chunk count
+    boost::uint64_t chunkSize = boost::uint64_t( m_outputStream.tellp() ) - boost::uint64_t( m_prtsChunkSizeSeek + 8 );
+    m_outputStream.seekp( m_prtsChunkSizeSeek, ios::beg );
+    // Rewrite the chunk size
+    m_outputStream.write( reinterpret_cast<const char*>( &chunkSize ), 8u );
+    // Seek to where in the 'Part'/'PrtO' header we want to rewrite the counts
+    m_outputStream.seekp( m_prtsParticleCountSeek, ios::beg );
+    // Rewrite the particle count
+    m_outputStream.write( reinterpret_cast<const char*>( &m_particleCount ), 8u );
+    // Rewrite the particle chunk count
+    m_outputStream.write( reinterpret_cast<const char*>( &m_particleChunkCount ), 8u );
 
-        // Wrap the chunk in an unique_ptr to prevent memory leaks in case this function exits with an error or is
-        // cancelled.
-        std::unique_ptr<prt2_writer::particle_chunk> chunk( reinterpret_cast<prt2_writer::particle_chunk*>( item ) );
+    // Seek to the end again, and switch back to the filechunks state
+    m_outputStream.seekp( 0, ios::end );
 
-        // Skip zero-sized chunks.
-        if( chunk->particleCount == 0 ) {
-            return chunk.release();
-        }
-
-        size_t chunkSizeUncompressed = chunk->uncompressed.size();
-        size_t chunkSize = LZ4_compressBound( static_cast<int>( chunkSizeUncompressed ) );
-        // Detect overflow by making sure the compressBound function returned a value that's bigger
-        if( chunkSize < chunkSizeUncompressed || ( chunkSize & ~0x7fffffffULL ) != 0 ) {
-            stringstream ss;
-            ss << "prt2_file_writer: Tried to write a particle chunk to output stream \"" << to_string( m_streamname )
-               << "\" which was too big";
-            throw runtime_error( ss.str() );
-        }
-
-        chunk->compressed.resize( chunkSize );
-        int compressResult =
-            LZ4_compress( &chunk->uncompressed[0], &chunk->compressed[0], static_cast<int>( chunkSizeUncompressed ) );
-        if( compressResult <= 0 ) {
-            stringstream ss;
-            ss << "prt2_file_writer: LZ4 compression failure writing to output stream \"" << to_string( m_streamname )
-               << "\"";
-            throw runtime_error( ss.str() );
-        }
-        chunk->compressed.resize( compressResult );
-
-        return chunk.release();
+    // Write the 'PInd' particle chunk index
+    frantic::graphics::raw_byte_buffer buf;
+    serialize::write_varstring( buf, m_particleStreamName );
+    serialize::write_value<boost::uint64_t>( buf, m_particleChunkCount );
+    for( std::vector<particle_chunk_index_info>::const_iterator i = m_particleChunkIndex.begin(),
+                                                                end = m_particleChunkIndex.end();
+         i != end; ++i ) {
+        serialize::write_varint( buf, i->PRTChunkSize );
+        serialize::write_varint( buf, i->PRTChunkParticleCount );
     }
-};
-#endif
-} // namespace chunk_compressors
+    frantic::prtfile::detail::write_prt2_buffered_filechunk( m_outputStream, buf, PRT2_FILECHUNK_NAME_PIdx,
+                                                             m_particleStreamName );
+}
 
-void* prt2_writer::chunk_writer::operator()( void* item ) {
+void prt2_writer::chunk_writer::operator()( prt2_writer::particle_chunk* item ) {
     // Skip ignore chunks.
     if( item == &prt2_writer::IGNORE_CHUNK ) {
-        return this;
+        return;
     }
 
     // Write the file chunk header before the first chunk. Cannot just detect that 0 particles have been written as the
@@ -524,11 +486,11 @@ void* prt2_writer::chunk_writer::operator()( void* item ) {
     if( item == &prt2_writer::TERMINATION_CHUNK ) {
         end_particle_chunks();
         m_progress.update_progress( 100.0f );
-        return NULL;
+        return;
     }
 
     // Wrap the chunk in an unique_ptr so it is automatically disposed of at the end of this function.
-    std::unique_ptr<prt2_writer::particle_chunk> chunk( reinterpret_cast<prt2_writer::particle_chunk*>( item ) );
+    std::unique_ptr<prt2_writer::particle_chunk> chunk( item );
 
     bool isPrtO = chunk->usePositionOffset;
 
@@ -570,168 +532,4 @@ void* prt2_writer::chunk_writer::operator()( void* item ) {
 
     m_particleCount += chunk->particleCount;
     ++m_particleChunkCount;
-
-    return this;
-}
-
-void prt2_writer::chunk_writer::begin_particle_chunks() {
-    if( m_compressionScheme < 0 || m_compressionScheme >= prt2_compression_count ) {
-        stringstream ss;
-        ss << "prt2_writer: Unsupported PRT2 compression scheme " << m_compressionScheme
-           << " while writing to output stream \"" << to_string( m_fileStreamName ) << "\"";
-        throw runtime_error( ss.str() );
-    }
-
-    m_particleCount = 0;
-    m_particleChunkCount = 0;
-
-    // The filechunk header
-    boost::uint32_t chunkName = ( m_usePositionOffset ? PRT2_FILECHUNK_NAME_PrtO : PRT2_FILECHUNK_NAME_Part );
-    m_outputStream.write( reinterpret_cast<const char*>( &chunkName ), 4u );
-    m_prtsChunkSizeSeek = m_outputStream.tellp();
-    boost::uint64_t chunkSize = 0xffffffffffffffffULL; // Gets fixed up later
-    m_outputStream.write( reinterpret_cast<const char*>( &chunkSize ), 8u );
-
-    // The 'Part'/'PrtO' header
-    serialize::write_varstring( m_outputStream, m_particleStreamName );
-    serialize::write_compression_scheme( m_outputStream, m_compressionScheme );
-    m_prtsParticleCountSeek = m_outputStream.tellp();
-    boost::uint64_t particleCount = 0xffffffffffffffffULL; // Gets fixed up later
-    m_outputStream.write( reinterpret_cast<const char*>( &particleCount ), 8u );
-    boost::uint64_t particleChunkCount = 0xffffffffffffffffULL; // Gets fixed up later
-    m_outputStream.write( reinterpret_cast<const char*>( &particleChunkCount ), 8u );
-}
-
-void prt2_writer::get_filters( boost::uint64_t totalParticleCount, frantic::logging::progress_logger& progress,
-                               const frantic::tstring& particleStreamName, bool usePositionOffset,
-                               prt2_compression_t compressionScheme,
-                               std::vector<boost::shared_ptr<tbb::filter>>& outFilters,
-                               boost::shared_ptr<chunk_writer>& outChunkWriter ) {
-    // Verify this particle stream name hasn't yet been written.
-    if( m_writtenParticleStreamNames.find( particleStreamName ) != m_writtenParticleStreamNames.end() ) {
-        stringstream ss;
-        ss << "prt2_writer: Internal error: already wrote a ";
-        if( particleStreamName.empty() ) {
-            ss << "default";
-        } else {
-            ss << "named \"" << to_string( particleStreamName ) << "\"";
-        }
-        ss << " 'Part'/'PrtO' filechunk to output stream \"" << to_string( m_streamname ) << "\"";
-        throw runtime_error( ss.str() );
-    }
-    m_writtenParticleStreamNames.insert( particleStreamName );
-
-    // Create the various parts of the pipeline as needed.
-    boost::shared_ptr<tbb::filter> chunkTransposer;
-    switch( compressionScheme ) {
-    case prt2_compression_uncompressed:
-    case prt2_compression_zlib:
-#if defined( LZ4_AVAILABLE )
-    case prt2_compression_lz4:
-#endif
-        // No transposition.
-        break;
-
-    case prt2_compression_transpose_zlib:
-    case prt2_compression_transpose:
-#if defined( LZ4_AVAILABLE )
-    case prt2_compression_transpose_lz4:
-#endif
-        chunkTransposer.reset( new chunk_transposer( m_fileParticleChannelMap.structure_size() ) );
-        break;
-
-    default:
-        throw std::runtime_error( "prt2_writer::write_particle_chunks - Unknown compression type." );
-    }
-
-    if( chunkTransposer != NULL ) {
-        outFilters.push_back( chunkTransposer );
-    }
-
-    boost::shared_ptr<tbb::filter> chunkCompressor;
-    switch( compressionScheme ) {
-    case prt2_compression_uncompressed:
-    case prt2_compression_transpose:
-        // No compression.
-        break;
-
-    case prt2_compression_zlib:
-    case prt2_compression_transpose_zlib:
-        chunkCompressor.reset( new chunk_compressors::zlib_compression( m_streamname ) );
-        break;
-
-#if defined( LZ4_AVAILABLE )
-    case prt2_compression_lz4:
-    case prt2_compression_transpose_lz4:
-        chunkCompressor.reset( new chunk_compressors::lz4_compression( m_streamname ) );
-        break;
-#endif
-
-    default:
-        throw std::runtime_error( "prt2_writer::write_particle_chunks - Unknown compression type." );
-    }
-
-    if( chunkCompressor != NULL ) {
-        outFilters.push_back( chunkCompressor );
-    }
-
-    outChunkWriter.reset( new chunk_writer( *this, *m_file.get(), m_streamname, particleStreamName, usePositionOffset,
-                                            compressionScheme, totalParticleCount, progress ) );
-}
-
-void prt2_writer::write_particle_chunks( boost::shared_ptr<tbb::filter> chunkGenerator,
-                                         boost::uint64_t totalParticleCount,
-                                         frantic::logging::progress_logger& progress,
-                                         const frantic::tstring& particleStreamName, bool usePositionOffset,
-                                         prt2_compression_t compressionScheme ) {
-    // This function uses a tbb::pipeline since one isn't specified.
-    boost::shared_ptr<tbb::pipeline> chunkPipeline( new tbb::pipeline() );
-
-    // Fill the pipeline in with filters.
-    chunkPipeline->add_filter( *chunkGenerator.get() );
-
-    std::vector<boost::shared_ptr<tbb::filter>> filters;
-    boost::shared_ptr<chunk_writer> chunkWriter;
-    get_filters( totalParticleCount, progress, particleStreamName, usePositionOffset, compressionScheme, filters,
-                 chunkWriter );
-
-    for( std::vector<boost::shared_ptr<tbb::filter>>::iterator i = filters.begin(), end = filters.end(); i != end;
-         ++i ) {
-        chunkPipeline->add_filter( **i );
-    }
-
-    chunkPipeline->add_filter( *chunkWriter.get() );
-
-    // Write the particle chunks.
-    write_particle_chunks( chunkPipeline, chunkWriter );
-}
-
-void prt2_writer::chunk_writer::end_particle_chunks() {
-    // Seek back and rewrite the chunk size, particle count, and particle chunk count
-    boost::uint64_t chunkSize = boost::uint64_t( m_outputStream.tellp() ) - boost::uint64_t( m_prtsChunkSizeSeek + 8 );
-    m_outputStream.seekp( m_prtsChunkSizeSeek, ios::beg );
-    // Rewrite the chunk size
-    m_outputStream.write( reinterpret_cast<const char*>( &chunkSize ), 8u );
-    // Seek to where in the 'Part'/'PrtO' header we want to rewrite the counts
-    m_outputStream.seekp( m_prtsParticleCountSeek, ios::beg );
-    // Rewrite the particle count
-    m_outputStream.write( reinterpret_cast<const char*>( &m_particleCount ), 8u );
-    // Rewrite the particle chunk count
-    m_outputStream.write( reinterpret_cast<const char*>( &m_particleChunkCount ), 8u );
-
-    // Seek to the end again, and switch back to the filechunks state
-    m_outputStream.seekp( 0, ios::end );
-
-    // Write the 'PInd' particle chunk index
-    frantic::graphics::raw_byte_buffer buf;
-    serialize::write_varstring( buf, m_particleStreamName );
-    serialize::write_value<boost::uint64_t>( buf, m_particleChunkCount );
-    for( std::vector<particle_chunk_index_info>::const_iterator i = m_particleChunkIndex.begin(),
-                                                                end = m_particleChunkIndex.end();
-         i != end; ++i ) {
-        serialize::write_varint( buf, i->PRTChunkSize );
-        serialize::write_varint( buf, i->PRTChunkParticleCount );
-    }
-    frantic::prtfile::detail::write_prt2_buffered_filechunk( m_outputStream, buf, PRT2_FILECHUNK_NAME_PIdx,
-                                                             m_particleStreamName );
 }

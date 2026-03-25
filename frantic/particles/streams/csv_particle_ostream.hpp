@@ -1,10 +1,15 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
+#include "frantic/misc/exception_stream.hpp"
 #include <frantic/particles/streams/particle_ostream.hpp>
 
 #include <frantic/strings/tstring.hpp>
 
 #include <frantic/channels/channel_map_adaptor.hpp>
+
+#include <frantic/logging/logging_level.hpp>
+
+#include <frantic/files/files.hpp>
 
 namespace frantic {
 namespace particles {
@@ -15,7 +20,7 @@ namespace streams {
 //////////////////////
 class csv_particle_ostream : public particle_ostream {
     channel_map m_particleChannelMapForFile, m_particleChannelMap;
-    channel_map_adaptor m_pcmAdaptor;
+    channels::channel_map_adaptor m_pcmAdaptor;
 
     const frantic::tstring m_file;
     std::basic_ofstream<frantic::tchar> m_fout;
@@ -79,9 +84,9 @@ class csv_particle_ostream : public particle_ostream {
   public:
     csv_particle_ostream( const frantic::tstring& file, const channel_map& particleChannelMap,
                           const channel_map& particleChannelMapForFile, boost::int64_t expectedParticleCount = -1 )
-        : m_file( file )
+        : m_particleChannelMapForFile( particleChannelMapForFile )
         , m_particleChannelMap( particleChannelMap )
-        , m_particleChannelMapForFile( particleChannelMapForFile )
+        , m_file( file )
         , m_expectedParticleCount( expectedParticleCount ) {
         // TODO: We need a better strategy for generating a temporary file.
         m_fout.open( ( file + _T(".tmp") ).c_str() );

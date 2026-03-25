@@ -7,10 +7,11 @@
 #include <frantic/particles/streams/particle_ostream.hpp>
 #include <frantic/prtfile/prt2_writer.hpp>
 
-#include <tbb/task.h>
-#include <tbb/task_scheduler_init.h>
+#include <oneapi/tbb/concurrent_queue.h>
+#include <oneapi/tbb/task_group.h>
+#include <oneapi/tbb/parallel_pipeline.h>
 
-#include <tbb/concurrent_queue.h>
+#include <atomic>
 
 namespace frantic {
 namespace particles {
@@ -22,8 +23,6 @@ class prt2_particle_ostream : public frantic::particles::streams::particle_ostre
      * A pipeline that can be manually stepped through.
      */
 // Allow us to compile with the deprecated tbb::pipeline for now...
-#pragma warning( push )
-#pragma warning( disable : 4996 )
     class modal_pipeline {
         enum State {
             Stopped = 0,
@@ -32,15 +31,12 @@ class prt2_particle_ostream : public frantic::particles::streams::particle_ostre
             Complete = 3,
         };
 
-        tbb::atomic<boost::uint8_t> m_state;
-        tbb::pipeline m_autoPipeline;        // The tbb pipeline that is used when this is in automatic mode.
-        std::vector<tbb::filter*> m_filters; // The filters in the pipeline.
+        std::atomic<boost::uint8_t> m_state;
         void* m_data;                        // The data passed down the pipeline. NULL if the pipeline is done.
 
       public:
         modal_pipeline()
-            : m_filters()
-            , m_data( this ) {
+            : m_data( this ) {
             m_state = Stopped;
         }
 
@@ -49,7 +45,6 @@ class prt2_particle_ostream : public frantic::particles::streams::particle_ostre
         bool is_manually_running() const { return m_state == ManualRunning; }
         bool is_running() const { return m_state == AutomaticRunning || m_state == ManualRunning; }
 
-        void add_filter( tbb::filter& filter );
         void clear();
 
         /**
@@ -69,23 +64,25 @@ class prt2_particle_ostream : public frantic::particles::streams::particle_ostre
          */
         bool step();
     };
-#pragma warning( pop )
 
   private:
+    oneapi::tbb::task_group m_taskGroup;
     frantic::prtfile::prt2_writer m_prt2;
     tbb::concurrent_queue<std::vector<char>> m_particleChunkQueue;
 
-    // Holds the filters as the pipeline has a weak pointer.
-    std::vector<boost::shared_ptr<tbb::filter>> m_chunkPipelineFilters;
+    using pipeline_item = frantic::prtfile::prt2_writer::particle_chunk*;
+    using stage_fn = std::function<pipeline_item( pipeline_item )>;
+    using source_fn = std::function<pipeline_item()>;
+    using sink_fn = std::function<void( pipeline_item )>;
+
+    std::vector<stage_fn> m_filters;
+    pipeline_item m_data;
 
     // The pipeline that does the heavy lifting of file writing.
-    boost::shared_ptr<modal_pipeline> m_chunkPipeline;
+    std::shared_ptr<modal_pipeline> m_chunkPipeline;
 
     // Signalling variable to communicate with our child tasks.
     volatile bool m_closeRequested;
-
-    // A dummy task which spawns our child task (the queued_write_task) and allows us to wait for its completion.
-    tbb::task* m_dummyTask;
 
     // A null progress logger we can count on to be around as long as this instance is.
     frantic::logging::null_progress_logger m_nullProgress;
@@ -100,8 +97,8 @@ class prt2_particle_ostream : public frantic::particles::streams::particle_ostre
     frantic::graphics::boundbox3fd m_boundbox;
 
     // Private copy constructor and assignment operator to disable copying
-    prt2_particle_ostream( const prt2_particle_ostream& );            // not implemented
-    prt2_particle_ostream& operator=( const prt2_particle_ostream& ); // not implemented
+    prt2_particle_ostream( const prt2_particle_ostream& ) = delete;
+    prt2_particle_ostream& operator=( const prt2_particle_ostream& ) = delete;
 
   public:
     prt2_particle_ostream(

@@ -22,12 +22,12 @@ rle_levelset_particle_istream::rle_levelset_particle_istream(
     frantic::volumetrics::voxel_sampler_interface_ptr pParticleGenerator, float innerDistance, float outerDistance,
     bool compensateDensity )
     : m_pLevelset( pLevelset )
-    , m_pParticleGenerator( pParticleGenerator )
-    , m_outerDistance( outerDistance )
-    , m_innerDistance( innerDistance )
     , m_iter( pLevelset->get_rle_index_spec(), false )
     , m_endIter( pLevelset->get_rle_index_spec(), true )
-    , m_compensateDensity( compensateDensity ) {
+    , m_outerDistance( outerDistance )
+    , m_innerDistance( innerDistance )
+    , m_compensateDensity( compensateDensity )
+    , m_pParticleGenerator( pParticleGenerator ) {
     m_particleIndex = -1;
     m_particleProgressIndex = -1;
     m_particleProgressCount = (boost::int64_t)pLevelset->size();

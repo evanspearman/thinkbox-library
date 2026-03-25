@@ -530,7 +530,7 @@ void frantic::fluids::apply_sim_boundary( const boundbox3& simBounds, rle_voxel_
         boundaryPolicyFunction = standard_free_boundary_policy;
         break;
     default:
-        throw std::runtime_error( "apply_sim_boundary() - BOUNDARY_CONDITION " + lexical_cast<string>( wallCondition ) +
+        throw std::runtime_error( "apply_sim_boundary() - BOUNDARY_CONDITION " + lexical_cast<string>( static_cast<int>( wallCondition ) ) +
                                   " is not supported for the sim wall boundaries" );
     }
 

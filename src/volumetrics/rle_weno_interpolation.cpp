@@ -23,9 +23,6 @@ void staggered_weno3_debug_dump(
     frantic::volumetrics::levelset::const_rle_channel_accessor<frantic::graphics::vector3f>& velocityAccessor,
     frantic::graphics::vector3f voxelLookup ) {
 
-    vector3 voxelFloor = vector3::from_floor( voxelLookup );
-    vector3f voxelFloorFloat( voxelFloor );
-
     vector3f velocity;
 
     vector3 xyz, abc;
@@ -83,9 +80,6 @@ frantic::graphics::vector3f staggered_weno3_lookup(
     frantic::volumetrics::levelset::const_rle_channel_accessor<float>& /*indicatorXAccessor2*/,
     frantic::volumetrics::levelset::const_rle_channel_accessor<frantic::graphics::vector3f>& velocityAccessor,
     frantic::graphics::vector3f voxelLookup ) {
-
-    vector3 voxelFloor = vector3::from_floor( voxelLookup );
-    vector3f voxelFloorFloat( voxelFloor );
 
     vector3f velocity;
 
@@ -446,8 +440,6 @@ frantic::graphics::vector3f staggered_weno3_lookup(
 float weno3_signed_distance_lookup( const boost::int32_t* const dataIndices, const frantic::graphics::size3& boxSize,
                                     const frantic::graphics::vector3& currentXYZMin,
                                     const std::vector<float>& distanceData, frantic::graphics::vector3f voxelLookup ) {
-    frantic::graphics::vector3 voxelFloor = vector3::from_floor( voxelLookup );
-    frantic::graphics::vector3f voxelFloorFloat( voxelFloor );
     frantic::graphics::vector3 xyz, abc;
     frantic::graphics::vector3f weight;
 

@@ -790,7 +790,7 @@ size_t sizeof_channel_data_type( data_type_t type ) {
     default:
         throw std::runtime_error(
             "sizeof_channel_data_type: Attempted to determine the size of an invalid data type enum " +
-            boost::lexical_cast<std::string>( type ) );
+            boost::lexical_cast<std::string>( static_cast<int>( type ) ) );
     }
 }
 

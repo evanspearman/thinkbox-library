@@ -4,6 +4,7 @@
 #include "stdafx.h"
 // clang-format on
 
+#include <boost/numeric/conversion/cast.hpp>
 #include <frantic/geometry/trimesh3.hpp>
 
 #include <frantic/geometry/mesh_interface_utils.hpp>
@@ -16,7 +17,6 @@
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_sort.h>
 #include <tbb/spin_mutex.h>
-#include <tbb/task_scheduler_init.h>
 
 #include <boost/foreach.hpp>
 
@@ -1470,8 +1470,6 @@ bool trimesh3::check_channel_sizes( std::ostream& out, frantic::logging::progres
 // The original implementation was quite slow due to using a map of all edges. This is my attempt to
 // optimize the method by using a sorted array, and parallelizing some parts
 bool trimesh3::check_duplicate_edges( std::ostream& out, frantic::logging::progress_logger* logger ) const {
-    tbb::task_scheduler_init taskScheduleInit;
-
     frantic::logging::null_progress_logger nullLogger;
     if( !logger ) {
         logger = &nullLogger;

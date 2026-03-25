@@ -15,11 +15,6 @@
 
 #include <frantic/volumetrics/rle_weno_interpolation.hpp>
 
-#pragma warning( push )
-#pragma warning( disable : 4512 4100 )
-#include <tbb/task_scheduler_init.h>
-#pragma warning( pop )
-
 using namespace std;
 using namespace frantic;
 using namespace frantic::channels;
@@ -1346,7 +1341,6 @@ void rle_level_set::resample( rle_level_set& rleSource,
     rle_index_spec& ris = m_rleIndex;
 
     //	float voxelLength = m_voxelCoordSystem.voxel_length();
-    vector3f worldOrigin = m_voxelCoordSystem.world_origin();
 
     // The relative transforms don't properly take into account that the voxel centers are the sample locations,
     // but the voxel coordinates are at the corner of the voxel. This results in the output levelset being offset
@@ -2807,8 +2801,6 @@ float get_maximum_voxel_motion_from_staggered_velocity( const rle_voxel_field& f
 void rle_level_set::semi_lagrangian_advect_staggered( const boundbox3& voxelBounds,
                                                       const frantic::fluids::rle_voxel_field& velocityField,
                                                       const frantic::tstring& staggeredVelocityChannelName, float dt ) {
-    tbb::task_scheduler_init taskSchedulerInit;
-
     typedef rle_scanline_level_set_advect_rk3_weno3 advector_t;
 
     if( size() == 0 )

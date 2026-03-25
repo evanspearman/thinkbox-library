@@ -187,7 +187,7 @@ class rle_defined_box_iterator {
      *
      * @return a pointer to the current box indices.
      */
-    const boost::int32_t* const get_indices() const { return &m_dataIndices[0]; }
+    const boost::int32_t* get_indices() const { return &m_dataIndices[0]; }
 
     /**
      * This function dumps the current iterator data to an outstream.

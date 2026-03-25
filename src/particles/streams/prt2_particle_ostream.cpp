@@ -6,13 +6,6 @@
 
 #include <frantic/particles/streams/prt2_particle_ostream.hpp>
 
-#pragma warning( push )
-#pragma warning( disable : 4100 4512 )
-#include <tbb/pipeline.h>
-#pragma warning( pop )
-
-#include <tbb/tbb_thread.h>
-
 using namespace std;
 using namespace frantic;
 using namespace frantic::prtfile;

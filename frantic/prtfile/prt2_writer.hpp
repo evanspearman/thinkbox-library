@@ -2,15 +2,24 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 
+#include <exception>
 #include <iostream>
 #include <memory>
 #include <set>
+#include <sstream>
 
 #include <frantic/channels/channel_map.hpp>
 #include <frantic/channels/property_map.hpp>
 #include <frantic/files/files.hpp>
 #include <frantic/logging/progress_logger.hpp>
 #include <frantic/prtfile/prt2_common.hpp>
+
+#include <oneapi/tbb/global_control.h>
+#include <oneapi/tbb/parallel_pipeline.h>
+
+#include <zlib.h>
+
+#include <filesystem>
 
 namespace frantic {
 namespace prtfile {
@@ -31,69 +40,6 @@ class prt2_writer {
     struct particle_chunk_index_info {
         boost::int64_t PRTChunkSize, PRTChunkParticleCount;
     };
-
-    /**
-     * Writes a 'Part' or 'PrtO' file chunk to an output stream. This also handles deleting the chunks that came from
-     * the generator.
-
-     * This class is public as classes that use the prt2_writer and manually initialize their pipeline need to be aware
-     * of it.
-     */
-    class chunk_writer : boost::noncopyable {
-        prt2_writer& m_writer;
-
-        std::ostream& m_outputStream;
-        const frantic::tstring m_fileStreamName;
-        const frantic::tstring m_particleStreamName;
-        bool m_usePositionOffset;
-        prt2_compression_t m_compressionScheme;
-
-        // The positions within the file where the PRTs values started.
-        boost::int64_t m_prtsChunkSizeSeek, m_prtsParticleCountSeek;
-
-        boost::uint64_t m_particleCountTotal;
-        logging::progress_logger& m_progress;
-        bool m_isCancelled;
-        bool m_hasWrittenHeader;
-
-        // The number of particles and number of particle chunks written out so far, respectively.
-        boost::uint64_t m_particleCount, m_particleChunkCount;
-
-        // The particle chunk indexes written to this file chunk.
-        std::vector<prt2_writer::particle_chunk_index_info> m_particleChunkIndex;
-
-        // Write the 'Part' or 'PrtO' filechunk header.
-        void begin_particle_chunks();
-
-        // Fill in any missing information in the filechunk header and write the 'PInd' particle chunk index.
-        void end_particle_chunks();
-
-      public:
-        chunk_writer( prt2_writer& writer, std::ostream& outputStream, const frantic::tstring& fileStreamName,
-                      const frantic::tstring& particleStreamName, bool usePositionOffset,
-                      prt2_compression_t compressionScheme, boost::uint64_t totalParticleCount,
-                      logging::progress_logger& progress )
-            : m_writer( writer )
-            , m_outputStream( outputStream )
-            , m_fileStreamName( fileStreamName )
-            , m_particleStreamName( particleStreamName )
-            , m_usePositionOffset( usePositionOffset )
-            , m_compressionScheme( compressionScheme )
-            , m_prtsChunkSizeSeek( -1 )
-            , m_prtsParticleCountSeek( -1 )
-            , m_particleCountTotal( totalParticleCount )
-            , m_progress( progress )
-            , m_isCancelled( false )
-            , m_hasWrittenHeader( false )
-            , m_particleCount( 0 )
-            , m_particleChunkCount( 0 )
-            , m_particleChunkIndex() {}
-
-        void* operator()( void* item );
-
-        bool is_cancelled() const { return m_isCancelled; }
-    };
-
     /**
      * A particle chunk. A chunk generator must generate these so that they can be fed into the pipeline.
      */
@@ -127,6 +73,69 @@ class prt2_writer {
      */
     static particle_chunk TERMINATION_CHUNK;
 
+    /**
+     * Writes a 'Part' or 'PrtO' file chunk to an output stream. This also handles deleting the chunks that came from
+     * the generator.
+
+     * This class is public as classes that use the prt2_writer and manually initialize their pipeline need to be aware
+     * of it.
+     */
+    class chunk_writer {
+        // prt2_writer& m_writer;
+
+        std::ostream& m_outputStream;
+        const frantic::tstring m_fileStreamName;
+        const frantic::tstring m_particleStreamName;
+        bool m_usePositionOffset;
+        prt2_compression_t m_compressionScheme;
+
+        // The positions within the file where the PRTs values started.
+        boost::int64_t m_prtsChunkSizeSeek, m_prtsParticleCountSeek;
+
+        boost::uint64_t m_particleCountTotal;
+        logging::progress_logger& m_progress;
+        bool m_isCancelled;
+        bool m_hasWrittenHeader;
+
+        // The number of particles and number of particle chunks written out so far, respectively.
+        boost::uint64_t m_particleCount, m_particleChunkCount;
+
+        // The particle chunk indexes written to this file chunk.
+        std::vector<prt2_writer::particle_chunk_index_info> m_particleChunkIndex;
+
+        // Write the 'Part' or 'PrtO' filechunk header.
+        void begin_particle_chunks();
+
+        // Fill in any missing information in the filechunk header and write the 'PInd' particle chunk index.
+        void end_particle_chunks();
+
+      public:
+        chunk_writer( /*prt2_writer& writer,*/ std::ostream& outputStream, const frantic::tstring& fileStreamName,
+                      const frantic::tstring& particleStreamName, bool usePositionOffset,
+                      prt2_compression_t compressionScheme, boost::uint64_t totalParticleCount,
+                      logging::progress_logger& progress )
+            // : m_writer( writer )
+            : m_outputStream( outputStream )
+            , m_fileStreamName( fileStreamName )
+            , m_particleStreamName( particleStreamName )
+            , m_usePositionOffset( usePositionOffset )
+            , m_compressionScheme( compressionScheme )
+            , m_prtsChunkSizeSeek( -1 )
+            , m_prtsParticleCountSeek( -1 )
+            , m_particleCountTotal( totalParticleCount )
+            , m_progress( progress )
+            , m_isCancelled( false )
+            , m_hasWrittenHeader( false )
+            , m_particleCount( 0 )
+            , m_particleChunkCount( 0 )
+            , m_particleChunkIndex() {}
+
+        void operator()( particle_chunk* item );
+
+        bool is_cancelled() const { return m_isCancelled; }
+    };
+
+
     prt2_writer();
     ~prt2_writer();
 
@@ -142,7 +151,7 @@ class prt2_writer {
     /**
      * Gets the name of the file that is ultimately being written to
      */
-    const boost::filesystem::path& get_target_file() const { return m_targetFile; }
+    const std::filesystem::path& get_target_file() const { return m_targetFile; }
 
     // Writes a filechunk that was buffered in memory.
     void write_prt2_buffered_filechunk( const frantic::graphics::raw_byte_buffer& buf, boost::uint32_t chunkName );
@@ -176,7 +185,7 @@ class prt2_writer {
      *       example.
      */
     void open( const frantic::tstring& filename, const channels::channel_map& particleChannelMap,
-               bool useTempFile = true, const boost::filesystem::path& tempDir = boost::filesystem::path() );
+               bool useTempFile = true, const std::filesystem::path& tempDir = std::filesystem::path() );
     void open( std::ostream* os, const frantic::tstring& filename, const channels::channel_map& particleChannelMap );
 
     void close();
@@ -192,10 +201,18 @@ class prt2_writer {
      * \param outChunkWriter The filter which writes to the file. This is provided explicitly as it is guaranteed to
      *                       exist and holds information about cancellation.
      */
-    void get_filters( boost::uint64_t totalParticleCount, frantic::logging::progress_logger& progress,
-                      const frantic::tstring& particleStreamName, bool usePositionOffset,
-                      prt2_compression_t compressionScheme, std::vector<boost::shared_ptr<tbb::filter>>& outFilters,
-                      boost::shared_ptr<chunk_writer>& outChunkWriter );
+    // void get_filters( boost::uint64_t totalParticleCount, frantic::logging::progress_logger& progress,
+    //                   const frantic::tstring& particleStreamName, bool usePositionOffset,
+    //                   prt2_compression_t compressionScheme, std::vector<boost::shared_ptr<tbb::filter>>& outFilters,
+    //                   boost::shared_ptr<chunk_writer>& outChunkWriter );
+
+    std::shared_ptr<prt2_writer::chunk_writer> make_chunk_writer(
+      boost::uint64_t totalParticleCount,
+      frantic::logging::progress_logger& progress,
+      const frantic::tstring& particleStreamName,
+      bool usePositionOffset,
+      prt2_compression_t compressionScheme
+    );
 
     /**
      * Run the chunk pipeline to write particle chunks to a file within a 'Part' or 'PrtO' file chunk.
@@ -213,9 +230,9 @@ class prt2_writer {
                                 boost::shared_ptr<chunk_writer> chunkWriter ) {
         // Run the pipeline.
         try {
-            const std::size_t tokenCount = tbb::task_scheduler_init::default_num_threads();
+            const std::size_t tokenCount = oneapi::tbb::global_control::active_value(oneapi::tbb::global_control::max_allowed_parallelism );
             chunkPipeline->run( tokenCount );
-        } catch( tbb::tbb_exception& e ) {
+        } catch( std::exception& e ) {
             if( chunkWriter->is_cancelled() ) {
                 throw frantic::logging::progress_cancel_exception( e.what() );
             } else {
@@ -225,38 +242,20 @@ class prt2_writer {
         }
     }
 
-    /**
-     * Write the particle chunks from the chunk generator to the file as a 'Part' or 'PrtO' file chunk.
-     *
-     * \param chunkGenerator The filter which creates the particle chunks for this file chunk. The generator passes
-     *                       ownership of the chunk onto this prt2_writer.
-     * \param totalParticleCount The number of particles to be written. Only used for progress logging.
-     * \param progress Where to log progress to.
-     * \param particleStreamName The name of this file chunk.
-     * \param usePositionOffset If true, this is a 'PrtO' file chunk. Otherwise, this is a 'Part' file chunk.
-     * \param compressionScheme The compression method for the particle chunks in this file chunk.
-     */
-    void write_particle_chunks( boost::shared_ptr<tbb::filter> chunkGenerator, boost::uint64_t totalParticleCount,
-                                frantic::logging::progress_logger& progress, const frantic::tstring& particleStreamName,
-                                bool usePositionOffset, prt2_compression_t compressionScheme );
+    template <typename ChunkGenerator>
+    void write_particle_chunks( ChunkGenerator chunkGenerator,
+                                boost::uint64_t totalParticleCount,
+                                frantic::logging::progress_logger& progress,
+                                const frantic::tstring& particleStreamName,
+                                bool usePositionOffset,
+                                prt2_compression_t compressionScheme );
 
-    /**
-     * Write the particle chunks from the chunk generator to the file as a 'Part' or 'PrtO' file chunk.
-     *
-     * Same parameter meanings as above, but sets particleStreamName to "".
-     */
-    void write_particle_chunks( boost::shared_ptr<tbb::filter> chunkGenerator, boost::uint64_t totalParticleCount,
-                                frantic::logging::progress_logger& progress, bool usePositionOffset,
-                                prt2_compression_t compressionScheme ) {
-        write_particle_chunks( chunkGenerator, totalParticleCount, progress, _T(""), usePositionOffset,
-                               compressionScheme );
-    }
 
   private:
     void write_header();
 
     void initialize_temp_file_state( bool useTempFile, const frantic::tstring& filename,
-                                     const boost::filesystem::path& tempDir );
+                                     const std::filesystem::path& tempDir );
 
     template <class T>
     void write_metadata_filechunk( const frantic::tstring& metaName, const T& value ) {
@@ -277,16 +276,301 @@ class prt2_writer {
 
     // It's generally good to write the PRT to a temp file, then move it into place.
     bool m_useTempFile;
-    boost::filesystem::path m_tempDir;
-    boost::filesystem::path m_targetFile;
-    boost::filesystem::path m_tempLocalFile;
-    boost::filesystem::path m_tempRemoteFile;
+    std::filesystem::path m_tempDir;
+    std::filesystem::path m_targetFile;
+    std::filesystem::path m_tempLocalFile;
+    std::filesystem::path m_tempRemoteFile;
 };
 
 namespace detail {
 void write_prt2_buffered_filechunk( std::ostream& out, const frantic::graphics::raw_byte_buffer& buf,
                                     boost::uint32_t chunkName, const frantic::tstring& streamName );
+
+
 } // namespace detail
 
+/**
+ * Transposes particle chunks from the chunk generator if a transposing step was specified.
+ */
+class chunk_transposer {
+    const std::size_t m_particleSize;
+
+  public:
+    explicit chunk_transposer( std::size_t particleSize )
+        : m_particleSize( particleSize ) {}
+
+    prt2_writer::particle_chunk* operator()( prt2_writer::particle_chunk* item ) const {
+        // Skip ignore chunks and termination chunks.
+        if( item == &prt2_writer::IGNORE_CHUNK || item == &prt2_writer::TERMINATION_CHUNK ) {
+            return item;
+        }
+
+        // Wrap the chunk in an unique_ptr to prevent memory leaks in case this function exits with an error or is
+        // cancelled.
+        std::unique_ptr<prt2_writer::particle_chunk> chunk( item );
+
+        // Skip zero-sized chunks.
+        if( chunk->particleCount == 0 ) {
+            return chunk.release();
+        }
+
+        std::vector<char> transposeBuffer;
+        transposeBuffer.resize( chunk->uncompressed.size() );
+        transpose_bytes_forward( m_particleSize, chunk->particleCount, &chunk->uncompressed[0], &transposeBuffer[0] );
+
+        chunk->uncompressed.swap( transposeBuffer );
+
+        return chunk.release();
+    }
+};
+
+/**
+ * The chunk compressor is a filter that takes in particle chunks provided by the chunk generator or transposer and
+ * compresses them before they are handed off to the chunk_writer.
+ */
+namespace chunk_compressors {
+class zlib_compression;
+#if defined( LZ4_AVAILABLE )
+class lz4_compression;
+#endif
+
+// zlib compressor.
+class zlib_compression {
+    const frantic::tstring m_streamname;
+
+  public:
+    explicit zlib_compression( const frantic::tstring& streamname )
+        : m_streamname( streamname ) {}
+
+    prt2_writer::particle_chunk* operator()( prt2_writer::particle_chunk* item ) const {
+        // Skip ignore chunks and termination chunks.
+        if( item == &prt2_writer::IGNORE_CHUNK || item == &prt2_writer::TERMINATION_CHUNK ) {
+            return item;
+        }
+
+        // Wrap the chunk in an unique_ptr to prevent memory leaks in case this function exits with an error or is
+        // cancelled.
+        std::unique_ptr<prt2_writer::particle_chunk> chunk( item );
+
+        // Skip zero-sized chunks.
+        if( chunk->particleCount == 0 ) {
+            return chunk.release();
+        }
+
+        size_t chunkSizeUncompressed = chunk->uncompressed.size();
+        uLongf chunkSize = compressBound( static_cast<uLongf>( chunkSizeUncompressed ) );
+        // Detect overflow by making sure the compressBound function returned a value that's bigger
+        if( chunkSize < chunkSizeUncompressed || ( chunkSize & ~0xffffffffULL ) != 0 ) {
+            std::stringstream ss;
+            ss << "prt2_file_writer: Tried to write a particle chunk to output stream \"" << frantic::strings::to_string( m_streamname )
+               << "\" which was too big";
+            throw std::runtime_error( ss.str() );
+        }
+
+        chunk->compressed.resize( chunkSize );
+        if( compress( reinterpret_cast<Bytef*>( &chunk->compressed[0] ), &chunkSize,
+                      reinterpret_cast<const Bytef*>( &chunk->uncompressed[0] ),
+                      static_cast<uLongf>( chunkSizeUncompressed ) ) != Z_OK ) {
+            std::stringstream ss;
+            ss << "prt2_file_writer: ZLib compression failure writing to output stream \"" << frantic::strings::to_string( m_streamname )
+               << "\"";
+            throw std::runtime_error( ss.str() );
+        }
+        chunk->compressed.resize( chunkSize );
+
+        return chunk.release();
+    }
+};
+
+#if defined( LZ4_AVAILABLE )
+// lz4 compressor.
+class lz4_compression {
+    const frantic::tstring m_streamname;
+
+  public:
+    explicit lz4_compression( const frantic::tstring& streamname )
+        : m_streamname( streamname ) {}
+
+    prt2_writer::particle_chunk* operator()( prt2_writer::particle_chunk* item ) const {
+        // Skip ignore chunks and termination chunks.
+        if( item == &prt2_writer::IGNORE_CHUNK || item == &prt2_writer::TERMINATION_CHUNK ) {
+            return item;
+        }
+
+        // Wrap the chunk in an unique_ptr to prevent memory leaks in case this function exits with an error or is
+        // cancelled.
+        std::unique_ptr<prt2_writer::particle_chunk> chunk( item );
+
+        // Skip zero-sized chunks.
+        if( chunk->particleCount == 0 ) {
+            return chunk.release();
+        }
+
+        size_t chunkSizeUncompressed = chunk->uncompressed.size();
+        size_t chunkSize = LZ4_compressBound( static_cast<int>( chunkSizeUncompressed ) );
+        // Detect overflow by making sure the compressBound function returned a value that's bigger
+        if( chunkSize < chunkSizeUncompressed || ( chunkSize & ~0x7fffffffULL ) != 0 ) {
+            stringstream ss;
+            ss << "prt2_file_writer: Tried to write a particle chunk to output stream \"" << to_string( m_streamname )
+               << "\" which was too big";
+            throw runtime_error( ss.str() );
+        }
+
+        chunk->compressed.resize( chunkSize );
+        int compressResult =
+            LZ4_compress( &chunk->uncompressed[0], &chunk->compressed[0], static_cast<int>( chunkSizeUncompressed ) );
+        if( compressResult <= 0 ) {
+            stringstream ss;
+            ss << "prt2_file_writer: LZ4 compression failure writing to output stream \"" << to_string( m_streamname )
+               << "\"";
+            throw runtime_error( ss.str() );
+        }
+        chunk->compressed.resize( compressResult );
+
+        return chunk.release();
+    }
+};
+#endif
+} // namespace chunk_compressors
+
+
+template <typename ChunkGenerator>
+void prt2_writer::write_particle_chunks( ChunkGenerator chunkGenerator,
+                                         boost::uint64_t totalParticleCount,
+                                         frantic::logging::progress_logger& progress,
+                                         const frantic::tstring& particleStreamName,
+                                         bool usePositionOffset,
+                                         prt2_compression_t compressionScheme ) {
+    using particle_chunk_t = prt2_writer::particle_chunk;
+
+    auto writer = make_chunk_writer(
+        totalParticleCount, progress, particleStreamName, usePositionOffset, compressionScheme );
+
+    const std::size_t tokenCount =
+        oneapi::tbb::global_control::active_value(
+            oneapi::tbb::global_control::max_allowed_parallelism );
+
+    auto source =
+        oneapi::tbb::make_filter<void, particle_chunk_t*>(
+            oneapi::tbb::filter_mode::serial_in_order,
+            chunkGenerator );
+
+    try {
+        switch( compressionScheme ) {
+        case prt2_compression_uncompressed:
+        case prt2_compression_zlib:
+#if defined( LZ4_AVAILABLE )
+        case prt2_compression_lz4:
+#endif
+        {
+            switch( compressionScheme ) {
+            case prt2_compression_uncompressed: {
+                auto sink =
+                    oneapi::tbb::make_filter<particle_chunk_t*, void>(
+                        oneapi::tbb::filter_mode::serial_in_order,
+                        [writer]( particle_chunk_t* chunk ) { (*writer)( chunk ); } );
+
+                oneapi::tbb::parallel_pipeline( tokenCount, source & sink );
+                break;
+            }
+            case prt2_compression_zlib: {
+                auto compressor =
+                    oneapi::tbb::make_filter<particle_chunk_t*, particle_chunk_t*>(
+                        oneapi::tbb::filter_mode::parallel,
+                        chunk_compressors::zlib_compression( m_streamname ) );
+
+                auto sink =
+                    oneapi::tbb::make_filter<particle_chunk_t*, void>(
+                        oneapi::tbb::filter_mode::serial_in_order,
+                        [writer]( particle_chunk_t* chunk ) { (*writer)( chunk ); } );
+
+                oneapi::tbb::parallel_pipeline( tokenCount, source & compressor & sink );
+                break;
+            }
+#if defined( LZ4_AVAILABLE )
+            case prt2_compression_lz4: {
+                auto compressor =
+                    oneapi::tbb::make_filter<particle_chunk_t*, particle_chunk_t*>(
+                        oneapi::tbb::filter_mode::parallel,
+                        chunk_compressors::lz4_compression( m_streamname ) );
+
+                auto sink =
+                    oneapi::tbb::make_filter<particle_chunk_t*, void>(
+                        oneapi::tbb::filter_mode::serial_in_order,
+                        [writer]( particle_chunk_t* chunk ) { (*writer)( chunk ); } );
+
+                oneapi::tbb::parallel_pipeline( tokenCount, source & compressor & sink );
+                break;
+            }
+#endif
+            default:
+                throw std::runtime_error( "prt2_writer::write_particle_chunks - Unknown compression type." );
+            }
+            break;
+        }
+
+        case prt2_compression_transpose:
+        case prt2_compression_transpose_zlib:
+#if defined( LZ4_AVAILABLE )
+        case prt2_compression_transpose_lz4:
+#endif
+        {
+            auto transposer =
+                oneapi::tbb::make_filter<particle_chunk_t*, particle_chunk_t*>(
+                    oneapi::tbb::filter_mode::parallel,
+                    chunk_transposer( m_fileParticleChannelMap.structure_size() ) );
+
+            if( compressionScheme == prt2_compression_transpose ) {
+                auto sink =
+                    oneapi::tbb::make_filter<particle_chunk_t*, void>(
+                        oneapi::tbb::filter_mode::serial_in_order,
+                        [writer]( particle_chunk_t* chunk ) { (*writer)( chunk ); } );
+
+                oneapi::tbb::parallel_pipeline( tokenCount, source & transposer & sink );
+            } else if( compressionScheme == prt2_compression_transpose_zlib ) {
+                auto compressor =
+                    oneapi::tbb::make_filter<particle_chunk_t*, particle_chunk_t*>(
+                        oneapi::tbb::filter_mode::parallel,
+                        chunk_compressors::zlib_compression( m_streamname ) );
+
+                auto sink =
+                    oneapi::tbb::make_filter<particle_chunk_t*, void>(
+                        oneapi::tbb::filter_mode::serial_in_order,
+                        [writer]( particle_chunk_t* chunk ) { (*writer)( chunk ); } );
+
+                oneapi::tbb::parallel_pipeline( tokenCount, source & transposer & compressor & sink );
+            }
+#if defined( LZ4_AVAILABLE )
+            else if( compressionScheme == prt2_compression_transpose_lz4 ) {
+                auto compressor =
+                    oneapi::tbb::make_filter<particle_chunk_t*, particle_chunk_t*>(
+                        oneapi::tbb::filter_mode::parallel,
+                        chunk_compressors::lz4_compression( m_streamname ) );
+
+                auto sink =
+                    oneapi::tbb::make_filter<particle_chunk_t*, void>(
+                        oneapi::tbb::filter_mode::serial_in_order,
+                        [writer]( particle_chunk_t* chunk ) { (*writer)( chunk ); } );
+
+                oneapi::tbb::parallel_pipeline( tokenCount, source & transposer & compressor & sink );
+            }
+#endif
+            else {
+                throw std::runtime_error( "prt2_writer::write_particle_chunks - Unknown compression type." );
+            }
+            break;
+        }
+
+        default:
+            throw std::runtime_error( "prt2_writer::write_particle_chunks - Unknown compression type." );
+        }
+    } catch( const std::exception& e ) {
+        if( writer->is_cancelled() ) {
+            throw frantic::logging::progress_cancel_exception( e.what() );
+        } else {
+            throw;
+        }
+    }
+}
 } // namespace prtfile
 } // namespace frantic

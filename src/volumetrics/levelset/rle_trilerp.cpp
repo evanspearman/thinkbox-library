@@ -618,10 +618,10 @@ void cached_trilerp::fill_cache( const frantic::graphics::vector3f& voxelCoordin
 }
 
 cached_trilerp::cached_trilerp( const rle_index_spec& ris )
-    : m_ris( ris )
+    : m_cachedVoxelCoordinate( std::numeric_limits<float>::infinity() )
+    , m_cachedMinCorner( std::numeric_limits<boost::int32_t>::max() )
     , m_definedCount( 0 )
-    , m_cachedVoxelCoordinate( std::numeric_limits<float>::infinity() )
-    , m_cachedMinCorner( std::numeric_limits<boost::int32_t>::max() ) {}
+    , m_ris( ris ) {}
 
 bool cached_trilerp::get( const const_rle_channel_general_accessor& dataAccessor,
                           const frantic::graphics::vector3f& voxelCoordinate, char* outSample ) {

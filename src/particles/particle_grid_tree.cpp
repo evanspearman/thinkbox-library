@@ -505,14 +505,6 @@ struct get_particles_in_point_range_body {
     const float m_searchRadiusSquared;
     std::vector<char*>& m_outParticles;
 
-#if defined( _MSC_VER )
-#pragma warning( push )
-#pragma warning( disable : 4822 ) // local class member function does not have a body
-#endif
-    get_particles_in_point_range_body& operator=( get_particles_in_point_range_body& ); // not implemented
-#if defined( _MSC_VER )
-#pragma warning( pop )
-#endif
 
     get_particles_in_point_range_body(
         const std::size_t particleSize,
@@ -767,15 +759,6 @@ struct process_particles_in_bounds_body {
     const frantic::channels::channel_accessor<frantic::graphics::vector3f>& m_positionAccessor;
     void* m_userData;
     particle_grid_tree::particle_evaluation_function_t m_evaluationFunction;
-
-#if defined( _MSC_VER )
-#pragma warning( push )
-#pragma warning( disable : 4822 ) // local class member function does not have a body
-#endif
-    process_particles_in_bounds_body& operator=( process_particles_in_bounds_body& ); // not implemented
-#if defined( _MSC_VER )
-#pragma warning( pop )
-#endif
 
     process_particles_in_bounds_body(
         const std::vector<frantic::graphics::raw_byte_buffer*>& byteBuffers, const size_t particleSize,
