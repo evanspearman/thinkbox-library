@@ -97,7 +97,7 @@ endif()
 target_precompile_headers(thinkboxlibrary PRIVATE stdafx.h)
 
 pkg_check_modules(LIBB2 REQUIRED IMPORTED_TARGET libb2)
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED CONFIG COMPONENTS filesystem thread program_options)
 find_package(BZip2 REQUIRED)
 find_package(Eigen3 REQUIRED CONFIG)
 find_package(glog REQUIRED)
@@ -111,6 +111,9 @@ target_link_libraries(thinkboxlibrary
     PUBLIC
         PkgConfig::LIBB2
         Boost::boost
+        Boost::filesystem
+        Boost::thread
+        Boost::program_options
         BZip2::BZip2
         Eigen3::Eigen
         glog::glog

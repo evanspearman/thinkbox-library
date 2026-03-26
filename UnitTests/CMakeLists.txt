@@ -72,4 +72,4 @@ target_link_libraries(test_thinkboxlibrary
 target_precompile_headers(test_thinkboxlibrary PRIVATE stdafx.h)
 
 include(GoogleTest)
-gtest_discover_tests(test_thinkboxlibrary)
+gtest_add_tests(TARGET test_thinkboxlibrary)
