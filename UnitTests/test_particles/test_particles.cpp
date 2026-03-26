@@ -11,8 +11,6 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include <tbb/task_scheduler_init.h>
-
 #include <frantic/channels/channel_map.hpp>
 #include <frantic/channels/channel_map_adaptor.hpp>
 #include <frantic/channels/channel_map_lerp.hpp>
@@ -146,7 +144,7 @@ TEST( Particle, ContainerClasses ) {
     channel_accessor<boost::uint32_t> id = channelMap.get_accessor<boost::uint32_t>( _T("ID") );
 
     //
-    EXPECT_THROW( channel_accessor<half> temp = channelMap.get_accessor<half>( _T("Position") ), std::runtime_error )
+    EXPECT_THROW( [[maybe_unused]] channel_accessor<half> temp = channelMap.get_accessor<half>( _T("Position") ), std::runtime_error )
         << "Trying to access a channel with the incorrect type";
 
     // Type Checking
@@ -232,37 +230,22 @@ TEST( Particle, ContainerClasses ) {
     //		cout << "\n\nExtracted Proxy Particle IDs:\n";
 
     while( proxyCursor.next_particle() ) {
-        vector3f& p = pos.get( proxyCursor.raw_particle_buffer() );
-        vector3f& velc = vel.get( proxyCursor.raw_particle_buffer() );
-        half& u1 = u.get( proxyCursor.raw_particle_buffer() );
-        half& v1 = v.get( proxyCursor.raw_particle_buffer() );
-        vector3f& a = acc.get( proxyCursor.raw_particle_buffer() );
+        [[maybe_unused]] vector3f& p = pos.get( proxyCursor.raw_particle_buffer() );
+        [[maybe_unused]] vector3f& velc = vel.get( proxyCursor.raw_particle_buffer() );
+        [[maybe_unused]] half& u1 = u.get( proxyCursor.raw_particle_buffer() );
+        [[maybe_unused]] half& v1 = v.get( proxyCursor.raw_particle_buffer() );
+        [[maybe_unused]] vector3f& a = acc.get( proxyCursor.raw_particle_buffer() );
 
-        boost::uint32_t theID = id.get( proxyCursor.raw_particle_buffer() );
+        [[maybe_unused]] boost::uint32_t theID = id.get( proxyCursor.raw_particle_buffer() );
         //			cout << theID << " " ;
-
-        // Access the variables to get rid of the warning messages
-        p;
-        velc;
-        u1;
-        v1;
-        a;
-        theID;
     }
 
     while( proxyCursor.prev_particle() ) {
-        vector3f& p = pos.get( proxyCursor.raw_particle_buffer() );
-        vector3f& velc = vel.get( proxyCursor.raw_particle_buffer() );
-        half& u1 = u.get( proxyCursor.raw_particle_buffer() );
-        half& v1 = v.get( proxyCursor.raw_particle_buffer() );
-        vector3f& a = acc.get( proxyCursor.raw_particle_buffer() );
-
-        // Access the variables to get rid of the warning messages
-        p;
-        velc;
-        u1;
-        v1;
-        a;
+        [[maybe_unused]] vector3f& p = pos.get( proxyCursor.raw_particle_buffer() );
+        [[maybe_unused]] vector3f& velc = vel.get( proxyCursor.raw_particle_buffer() );
+        [[maybe_unused]] half& u1 = u.get( proxyCursor.raw_particle_buffer() );
+        [[maybe_unused]] half& v1 = v.get( proxyCursor.raw_particle_buffer() );
+        [[maybe_unused]] vector3f& a = acc.get( proxyCursor.raw_particle_buffer() );
 
         id.get( proxyCursor.raw_particle_buffer() ) = id.get( proxyCursor.raw_particle_buffer() ) | PRT_FLG_MODIFIED;
     }
@@ -274,27 +257,19 @@ TEST( Particle, ContainerClasses ) {
     {
         //			unsigned i = 0;
         while( c_proxyCursor.next_particle() ) {
-            const vector3f& p = c_pos.get( c_proxyCursor.raw_particle_buffer() );
-            const vector3f& velc = c_vel.get( c_proxyCursor.raw_particle_buffer() );
-            const half& u1 = c_u.get( c_proxyCursor.raw_particle_buffer() );
-            const half& v1 = c_v.get( c_proxyCursor.raw_particle_buffer() );
-            const vector3f& a = c_acc.get( c_proxyCursor.raw_particle_buffer() );
+            [[maybe_unused]] const vector3f& p = c_pos.get( c_proxyCursor.raw_particle_buffer() );
+            [[maybe_unused]] const vector3f& velc = c_vel.get( c_proxyCursor.raw_particle_buffer() );
+            [[maybe_unused]] const half& u1 = c_u.get( c_proxyCursor.raw_particle_buffer() );
+            [[maybe_unused]] const half& v1 = c_v.get( c_proxyCursor.raw_particle_buffer() );
+            [[maybe_unused]] const vector3f& a = c_acc.get( c_proxyCursor.raw_particle_buffer() );
 
-            const boost::uint32_t theID = c_id.get( c_proxyCursor.raw_particle_buffer() ) & ~PRT_FLG_MODIFIED;
+            [[maybe_unused]] const boost::uint32_t theID = c_id.get( c_proxyCursor.raw_particle_buffer() ) & ~PRT_FLG_MODIFIED;
             //				if( i < proxyParticleIDs.size() && masked_uint32<PRT_ID_MASK >(c_id.get(c_proxyCursor))
             //==
             // masked_uint32<PRT_ID_MASK>( proxyParticleIDs[i])) {
             //					cout << theID << " " ;
             //					++i;
             //				}
-
-            // Access the variables to get rid of the warning messages
-            p;
-            velc;
-            u1;
-            v1;
-            a;
-            theID;
         }
     }
 

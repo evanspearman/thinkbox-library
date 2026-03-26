@@ -20,7 +20,7 @@ TEST(GeometryTest, MixedKDTreePointData) {
 
     // Create an std::vector<char> of length 80 that starts with 'a', ends with 'z', and is
     // otherwise filled with 'b'.
-    std::size_t size = 80;
+    constexpr std::size_t size = 80;
     std::array<char, size> data; 
     data[0] = 'a';
     std::fill( data.begin() + 1, data.end(), 'b' );

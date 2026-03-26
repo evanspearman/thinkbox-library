@@ -19,7 +19,7 @@ void getAllChannelDefinition( const channel_map& cm, std::vector<frantic::tstrin
                               std::vector<channel_general_accessor>& outAccessors ) {
     data_type_t cm_type;
     size_t cm_arity;
-    for( int i = 0; i < cm.channel_count(); i++ ) {
+    for( std::size_t i = 0; i < cm.channel_count(); i++ ) {
         frantic::tstring channelName;
         cm.get_channel_definition( i, channelName, cm_type, cm_arity );
         outChannelNames.push_back( channelName );
@@ -43,7 +43,7 @@ AssertionResult cmpChannelMap( const char* /*expected_cm_expr*/, const char* /*a
     expected_cm_ss << "[";
     basic_stringstream<frantic::tchar> actual_cm_ss;
     actual_cm_ss << "[";
-    for( int i = 0; i < expected_cm.channel_count(); i++ ) {
+    for( std::size_t i = 0; i < expected_cm.channel_count(); i++ ) {
         expected_cm.get_channel_definition( i, channelName, expected_type, expected_arity );
         expected_cm_ss << channelName << " ( " << channel_data_type_str( expected_type ) << "[" << expected_arity
                        << "] )";
@@ -51,7 +51,7 @@ AssertionResult cmpChannelMap( const char* /*expected_cm_expr*/, const char* /*a
             expected_cm_ss << ", ";
     }
     expected_cm_ss << "]";
-    for( int i = 0; i < actual_cm.channel_count(); i++ ) {
+    for( std::size_t i = 0; i < actual_cm.channel_count(); i++ ) {
         actual_cm.get_channel_definition( i, channelName, actual_type, actual_arity );
         actual_cm_ss << channelName << " ( " << channel_data_type_str( actual_type ) << "[" << actual_arity << "] )";
         if( i < actual_cm.channel_count() - 1 )
@@ -63,7 +63,7 @@ AssertionResult cmpChannelMap( const char* /*expected_cm_expr*/, const char* /*a
     if( expected_cm.channel_count() != actual_cm.channel_count() ) {
         success = false;
     }
-    for( int i = 0; i < expected_cm.channel_count(); i++ ) {
+    for( std::size_t i = 0; i < expected_cm.channel_count(); i++ ) {
         expected_cm.get_channel_definition( i, channelName, expected_type, expected_arity );
         if( !actual_cm.has_channel( channelName ) ) {
             success = false;
@@ -133,8 +133,8 @@ AssertionResult cmpParticleArray( const char* expected_expr, const char* actual_
     getAllChannelDefinition( expected_cm, channelNames, channelTypes, channelArities, accessors );
 
     // Compare particle arrays
-    for( int i = 0; i < min( expected.particle_count(), actual_temp.particle_count() ); i++ ) {
-        for( int j = 0; j < expected_cm.channel_count(); j++ ) {
+    for( std::size_t i = 0; i < min( expected.particle_count(), actual_temp.particle_count() ); i++ ) {
+        for( std::size_t j = 0; j < expected_cm.channel_count(); j++ ) {
             const char* expected_data = accessors[j].get_channel_data_pointer( expected[i] );
             const char* actual_data = accessors[j].get_channel_data_pointer( actual_temp[i] );
             AssertionResult channelDataCompare =
@@ -203,7 +203,7 @@ AssertionResult cmpPropertyMap( const char* expected_expr, const char* actual_ex
     getAllChannelDefinition( expected_cm, propertyNames, propertyTypes, propertyArities, accessors );
 
     bool success = true;
-    for( int i = 0; i < expected_cm.channel_count(); i++ ) {
+    for( std::size_t i = 0; i < expected_cm.channel_count(); i++ ) {
         const char* expected_data = accessors[i].get_channel_data_pointer( expected.get_raw_buffer() );
         std::stringstream expected_ss;
         frantic::channels::channel_data_type_print( expected_ss, ", ", propertyArities[i], propertyTypes[i],

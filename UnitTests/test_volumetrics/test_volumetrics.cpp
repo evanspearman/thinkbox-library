@@ -555,7 +555,7 @@ TEST( Volumetrics, BuildLevelSetFromDirectLinearRLSISPolicy ) {
 
         // generate random data for the index spec
         for( rle_defined_iterator i = ris.begin(); i != ris.end(); ++i )
-            rlsData.push_back( 10.f * ( (float)rand() / RAND_MAX - 0.5f ) );
+            rlsData.push_back( 10.f * ( static_cast<float>( rand() ) / static_cast<float>( RAND_MAX ) - 0.5f ) );
 
         ASSERT_TRUE( ris.check_consistency( ss ) )
             << ss.str() +
@@ -567,7 +567,7 @@ TEST( Volumetrics, BuildLevelSetFromDirectLinearRLSISPolicy ) {
         // generate some random channel data
         rle_channel_accessor<vector3f> channelAccessor = inRLS.get_channel_accessor<vector3f>( _T("TestData") );
         for( size_t i = 0; i < inRLS.size(); ++i )
-            channelAccessor[i] = vector3f( 10.f * ( (float)rand() / RAND_MAX - 0.5f ) );
+            channelAccessor[i] = vector3f( 10.f * ( static_cast<float>( rand() ) / static_cast<float>( RAND_MAX ) - 0.5f ) );
 
         direct_linear_rle_level_set_is_policy lisp( inRLS, 3 ); // -3 is specific to the ISP internals
 

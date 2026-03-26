@@ -4,10 +4,6 @@
 #include "stdafx.h"
 // clang-format on
 
-#include <fstream>
-
-#include <tbb/task_scheduler_init.h>
-
 #include <frantic/particles/prt_metadata.hpp>
 #include <frantic/prtfile/prt2_reader.hpp>
 #include <frantic/prtfile/prt2_writer.hpp>
@@ -15,12 +11,7 @@
 #include <frantic/files/paths.hpp>
 #include <frantic/files/scoped_file_cleanup.hpp>
 
-#include <vector>
-
-#pragma warning( push )
-#pragma warning( disable : 4100 4512 )
-#include <tbb/pipeline.h>
-#pragma warning( pop )
+#include <boost/filesystem/directory.hpp>
 
 using namespace std;
 using namespace boost;
@@ -338,7 +329,6 @@ TEST( PRT2, ReadHandcraftedFile ) {
 }
 
 TEST( PRT2, WriteHandcraftedFile ) {
-    tbb::task_scheduler_init taskScheduleInit;
     channel_map pcm;
     pcm.end_channel_definition();
     pcm.append_channel<vector3f>( _T("Position") );
@@ -365,50 +355,60 @@ TEST( PRT2, WriteHandcraftedFile ) {
         dens.set( parr.at( i ), 1.f );
     }
 
-    // A chunk generator that takes the handcrafted data and allows it to be accessed in a pull format.
-    class chunk_gen : public tbb::filter {
+
+    using particle_chunk = frantic::prtfile::prt2_writer::particle_chunk;
+
+    class chunk_gen {
         particle_array& m_particles;
-        int m_i;
+        mutable int m_i;
 
       public:
-        chunk_gen( particle_array& particles )
-            : tbb::filter( true )
-            , m_particles( particles )
+        explicit chunk_gen( particle_array& particles )
+            : m_particles( particles )
             , m_i( -1 ) {}
 
-        void* operator()( void* ) {
+        particle_chunk* operator()( oneapi::tbb::flow_control& fc ) const {
             switch( ++m_i ) {
             case 0: {
-                prt2_writer::particle_chunk* chunk = new prt2_writer::particle_chunk();
+                auto* chunk = new particle_chunk();
                 chunk->particleCount = 2;
                 chunk->uncompressed.resize( m_particles.get_channel_map().structure_size() * 2 );
-                memcpy( &chunk->uncompressed[0], m_particles.at( 0 ), chunk->uncompressed.size() );
+                std::memcpy( &chunk->uncompressed[0], m_particles.at( 0 ), chunk->uncompressed.size() );
                 return chunk;
             }
             case 1: {
-                prt2_writer::particle_chunk* chunk = new prt2_writer::particle_chunk();
+                auto* chunk = new particle_chunk();
                 chunk->particleCount = 6;
                 chunk->uncompressed.resize( m_particles.get_channel_map().structure_size() * 6 );
-                memcpy( &chunk->uncompressed[0], m_particles.at( 2 ), chunk->uncompressed.size() );
+                std::memcpy( &chunk->uncompressed[0], m_particles.at( 2 ), chunk->uncompressed.size() );
                 return chunk;
             }
-            case 2: {
-                return &prt2_writer::TERMINATION_CHUNK;
-            }
-            default: {
-                return NULL;
-            }
+            case 2:
+                return &frantic::prtfile::prt2_writer::TERMINATION_CHUNK;
+
+            default:
+                fc.stop();
+                return nullptr;
             }
         }
     };
 
-    boost::shared_ptr<tbb::filter> chunkGen( new chunk_gen( parr ) );
+    chunk_gen chunkGen( parr );
     frantic::logging::null_progress_logger nullProgress;
-    prt2.write_particle_chunks( chunkGen, 8, nullProgress, false, frantic::prtfile::prt2_compression_uncompressed );
+
+    prt2.write_particle_chunks(
+        chunkGen,
+        8,
+        nullProgress,
+        _T(""),
+        false,
+        frantic::prtfile::prt2_compression_uncompressed );
 
     // TODO: Add ability of the prt2_writer to automatically produce these extents
-    prt2.write_channel_metadata_filechunk<boundbox3f>( _T("Position"), _T("Extents"),
-                                                       boundbox3f( -1, 1, -1, 1, -1, 1 ) );
+    prt2.write_channel_metadata_filechunk<boundbox3f>(
+        _T("Position"),
+        _T("Extents"),
+        boundbox3f( -1, 1, -1, 1, -1, 1 ) );
 
     // Compare what we've written in the stream with the handcrafted data
     os->flush();
@@ -446,7 +446,7 @@ TEST( PRT2, CleanupTempFileOnError ) {
 
     try {
         prt2_writer prt2;
-        prt2.open( frantic::files::to_tstring( targetFile ), pcm, true, tempPath );
+        prt2.open( frantic::files::to_tstring( targetFile ), pcm, true, tempPath.native() );
         throw std::runtime_error( "drop due to exception." );
     } catch( std::exception& /*e*/ ) {
         // pass

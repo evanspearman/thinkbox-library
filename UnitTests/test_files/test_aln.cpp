@@ -28,7 +28,7 @@ TEST( ALN, ParseFileSimple ) {
         std::vector<std::pair<tstring, transform4fd>> actualTransforms;
         aln::get_transforms<transform4fd>( _T("TestInputs/align.aln"), actualTransforms );
         ASSERT_EQ( testData.size(), actualTransforms.size() );
-        for( int i = 0; i < testData.size(); ++i ) {
+        for( std::size_t i = 0; i < testData.size(); ++i ) {
             EXPECT_EQ( testData[i].first, actualTransforms[i].first );
             EXPECT_TRANSFORM4FD_EQ( testData[i].second, actualTransforms[i].second );
         }
@@ -37,7 +37,7 @@ TEST( ALN, ParseFileSimple ) {
         std::vector<std::pair<tstring, transform4f>> actualTransforms;
         aln::get_transforms<transform4f>( _T("TestInputs/align.aln"), actualTransforms );
         ASSERT_EQ( testData.size(), actualTransforms.size() );
-        for( int i = 0; i < testData.size(); ++i ) {
+        for( std::size_t i = 0; i < testData.size(); ++i ) {
             EXPECT_EQ( testData[i].first, actualTransforms[i].first );
             EXPECT_TRANSFORM4F_EQ( transform4f( testData[i].second ), actualTransforms[i].second );
         }
@@ -150,11 +150,11 @@ TEST( ALN, TransformScan ) {
 
     const channels::channel_const_cvt_accessor<vector3fd> accessor =
         pArr.get_channel_map().get_const_cvt_accessor<vector3fd>( _T("Position") );
-    for( int i = 0; i < pArr.size(); ++i )
+    for( std::size_t i = 0; i < pArr.size(); ++i )
         actualPositions.push_back( accessor( pArr[i] ) );
 
     ASSERT_EQ( expectedPositions.size(), actualPositions.size() );
-    for( int i = 0; i < expectedPositions.size(); ++i ) {
+    for( std::size_t i = 0; i < expectedPositions.size(); ++i ) {
         EXPECT_VECTOR3FD_EQ( expectedPositions[i], actualPositions[i] );
     }
 }

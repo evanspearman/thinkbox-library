@@ -19,7 +19,7 @@ class proxy_particle_cursor : public particle_cursor {
 
     friend class const_proxy_particle_cursor;
 
-    proxy_particle_cursor& operator=( const proxy_particle_cursor& ) {}
+    proxy_particle_cursor& operator=( const proxy_particle_cursor& ) = delete;
 
   public:
     proxy_particle_cursor( char* begin, char* end, std::vector<boost::uint32_t>& proxyParticleIDs,
@@ -100,7 +100,7 @@ class const_proxy_particle_cursor : public const_particle_cursor {
     std::size_t offset;
     int m_proxyCursor;
 
-    const_proxy_particle_cursor& operator=( const const_proxy_particle_cursor& ) {}
+    const_proxy_particle_cursor& operator=( const const_proxy_particle_cursor& ) = delete;
 
   public:
     const_proxy_particle_cursor( const char* begin, const char* end,

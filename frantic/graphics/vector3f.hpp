@@ -108,7 +108,7 @@ class vector3t {
 
     // Generates a random vector in the unit cube [0,0,0] to [1,1,1]
     static vector3t from_random() {
-        return vector3t( (float_type)rand() / RAND_MAX, (float_type)rand() / RAND_MAX, (float_type)rand() / RAND_MAX );
+        return vector3t( static_cast<float_type>( rand() ) / static_cast<float_type>( RAND_MAX ), static_cast<float_type>( rand() ) / static_cast<float_type>( RAND_MAX ), static_cast<float_type>( rand() ) / static_cast<float_type>( RAND_MAX ) );
     }
 
     // Generates a random vector in the unit cube [0,0,0] to [1,1,1] (as long as that's what rng does)
@@ -128,8 +128,8 @@ class vector3t {
         vector3t result;
         while( !goodResult ) {
             // Use the non-polar form of the box-muller transformation
-            float_type x = (float_type)rand() / RAND_MAX, y = (float_type)rand() / RAND_MAX,
-                       z = (float_type)rand() / RAND_MAX, w = (float_type)rand() / RAND_MAX;
+            float_type x = static_cast<float_type>( rand() ) / static_cast<float_type>( RAND_MAX ), y = static_cast<float_type>( rand() ) / static_cast<float_type>( RAND_MAX ),
+                       z = static_cast<float_type>( rand() ) / static_cast<float_type>( RAND_MAX ), w = static_cast<float_type>( rand() ) / static_cast<float_type>( RAND_MAX );
             double coefficient = sqrt( -2 * log( x ) );
             result.set( float_type( coefficient * cos( 2 * M_PI * y ) ),
                         float_type( coefficient * sin( 2 * M_PI * y ) ),

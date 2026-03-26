@@ -36,7 +36,7 @@ const static float colors[] = {
 };
 // clang-format on
 
-const static std::size_t numColors = 19;
+[[maybe_unused]] const static std::size_t numColors = 19;
 
 std::size_t row_offset( std::size_t i ) { return i * 9; }
 

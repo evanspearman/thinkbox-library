@@ -38,7 +38,6 @@ TEST( DartThrow, Rejection ) {
     vector3f point;
     vector3f p;
     //		int nIterations = 10000;
-    int fail = 0, trueCount = 0, falseCount = 0;
 
     float radius = 0.125f, targetDensity = 0.7f;
     std::size_t theoreticalCount = rejectThrower.estimate_particle_count( radius, targetDensity );
@@ -63,7 +62,6 @@ TEST( DartThrow, Rejection ) {
          i != endIter; ++i )
         particles.push_back( *i );
 
-    channel_accessor<boost::uint32_t> id = pcm.get_accessor<boost::uint32_t>( _T("ID") );
     channel_accessor<vector3f> pos = pcm.get_accessor<vector3f>( _T("Position") );
 
     int result = 0;
@@ -96,10 +94,6 @@ TEST( DartThrow, Rejection ) {
 
     cout << "3D Total particle count = " << basicResults.particle_count() << endl;
     cout << "# of Iterations Taken = " << maxIterations << endl;
-
-    fail = 0;
-    trueCount = 0;
-    falseCount = 0;
 
     particles.clear();
 

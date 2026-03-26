@@ -14,7 +14,7 @@ configure:
 
 # Build
 build:
-    cmake --build {{build_dir}} -- -v
+    cmake --build {{build_dir}}
 
 # Clean build dir
 clean:

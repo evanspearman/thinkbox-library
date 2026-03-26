@@ -12,11 +12,11 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 
-#include <tbb/atomic.h> // Replace with Boost.Atomic once we switch to Boost 1.53 (or std::atomic once we're on C++11)
 #include <tbb/concurrent_queue.h> // Replace with Boost.Lockfree perhaps?
 
 #include <deque>
 #include <limits>
+#include <atomic>
 
 namespace frantic {
 namespace files {
@@ -217,9 +217,9 @@ class background_serializer {
     SerializeImplType m_theImpl; // Object that is responsible for doing the actual serialization.
 
     std::size_t m_maxCapacity;           // Maximum size of pending value queue, in generic cache units.
-    tbb::atomic<std::size_t> m_curUsage; // Current size of '       '     '    , '  '       '     '
-    tbb::atomic<bool> m_wantsExit;     // If true, the worker threads should exit as soon as the pending queue empties.
-    tbb::atomic<bool> m_hasError;      // If true, one of the worker threads had an unhandled error and closed.
+    std::atomic<std::size_t> m_curUsage; // Current size of '       '     '    , '  '       '     '
+    std::atomic<bool> m_wantsExit;     // If true, the worker threads should exit as soon as the pending queue empties.
+    std::atomic<bool> m_hasError;      // If true, one of the worker threads had an unhandled error and closed.
     pending_container m_pendingValues; // Queue of values to serialize
 
     std::size_t m_numThreads;
@@ -630,7 +630,8 @@ inline void background_serializer<K, V, S>::thread_impl( boost::optional<pending
             theLock.lock();
 
         // If this is the first thread to experience a fatal exception, flag it and store the exception_ptr.
-        if( m_hasError.compare_and_swap( true, false ) == false )
+        bool expected = false;
+        if( m_hasError.compare_exchange_strong( expected, true ) )
             // NOTE: boost::current_exception() allows for uniform handling of exceptions. No need to specialize the
             // catch signature unless we actually handle them.
             m_threadException = boost::current_exception();

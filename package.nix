@@ -22,7 +22,7 @@
 }:
 
 let
-  buildUnitTests = false;
+  buildUnitTests = true;
   buildWithTbb = true;
   buildWithE57 = false;
   buildWithLz4 = false;

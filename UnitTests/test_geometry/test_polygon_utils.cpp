@@ -185,9 +185,9 @@ TEST( PolygonUtils, MinimumEnclosingRectangle ) {
         }
     }
 
-    float theta = float( ( (float)rand() / RAND_MAX ) * ( 2.0f * M_PI ) );
-    float xOff = float( ( (float)rand() / RAND_MAX ) * 100.0f );
-    float yOff = float( ( (float)rand() / RAND_MAX ) * 100.0f );
+    float theta = float( ( static_cast<float>( rand() ) / static_cast<float>( RAND_MAX ) ) * ( 2.0f * M_PI ) );
+    float xOff = float( ( static_cast<float>( rand() ) / static_cast<float>( RAND_MAX ) ) * 100.0f );
+    float yOff = float( ( static_cast<float>( rand() ) / static_cast<float>( RAND_MAX ) ) * 100.0f );
 
     for( size_t i = 0; i < points.size(); ++i ) {
         points[i] = vector2f( cosf( theta ) * points[i].x + xOff, sinf( theta ) * points[i].y + yOff );
@@ -297,7 +297,7 @@ TEST( PolygonUtils, Triangulate ) {
     };
 
     for( size_t i = 0; i < numPlanes; ++i ) {
-        transform4f transformTo3dPlane = planes[i].get_planar_transform().to_inverse();
+        [[maybe_unused]] transform4f transformTo3dPlane = planes[i].get_planar_transform().to_inverse();
 
         for( size_t j = 0; j < numPolygons; ++j ) {
             std::vector<vector3f> polygon3;

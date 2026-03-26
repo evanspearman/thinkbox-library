@@ -31,8 +31,7 @@ class particle_step {
     frantic::graphics::vector3f& m_newVelocity;
     frantic::graphics::vector3f& m_newPosition;
 
-    // Make the assignment operator private so no one can use it.
-    particle_step& operator=( const particle_step& ) {}
+    particle_step& operator=( const particle_step& ) = delete;
 
   public:
     particle_step( const frantic::graphics::vector3f& oldVelocity, const frantic::graphics::vector3f& oldPosition,
@@ -40,9 +39,9 @@ class particle_step {
                    boost::uint32_t& flag, int startTime, int endTime, float timeStep )
         : m_oldVelocity( oldVelocity )
         , m_oldPosition( oldPosition )
+        , m_flag( flag )
         , m_newVelocity( newVelocity )
-        , m_newPosition( newPosition )
-        , m_flag( flag ) {
+        , m_newPosition( newPosition ) {
         m_startTime = startTime;
         m_endTime = endTime;
         m_timeStep = timeStep;

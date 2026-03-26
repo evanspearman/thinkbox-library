@@ -333,7 +333,7 @@ TEST( Polymesh3, ScaleChannel ) {
         ASSERT_EQ( inAcc.vertex_count(), outAcc.vertex_count() );
         EXPECT_TRUE( inAcc.vertex_count() > 0 );
 
-        for( int i = 0; i < inAcc.vertex_count(); ++i ) {
+        for( std::size_t i = 0; i < inAcc.vertex_count(); ++i ) {
             EXPECT_EQ( 2 * inAcc.get_vertex( i ), outAcc.get_vertex( i ) );
         }
     }
@@ -348,7 +348,7 @@ TEST( Polymesh3, ScaleChannel ) {
         ASSERT_EQ( inAcc.face_count(), outAcc.face_count() );
         EXPECT_TRUE( inAcc.face_count() > 0 );
 
-        for( int i = 0; i < inAcc.face_count(); ++i ) {
+        for( std::size_t i = 0; i < inAcc.face_count(); ++i ) {
             EXPECT_EQ( 4 * inAcc.get_face( i ), outAcc.get_face( i ) );
         }
     }

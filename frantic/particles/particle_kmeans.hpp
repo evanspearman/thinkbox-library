@@ -3,10 +3,7 @@
 #pragma once
 
 #include <frantic/particles/particle_array.hpp>
-#pragma warning( push )
-#pragma warning( disable : 4100 )
 #include <boost/random.hpp>
-#pragma warning( pop )
 
 #include <algorithm>
 

@@ -12,8 +12,6 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/scope_exit.hpp>
 
-#include <tbb/task_scheduler_init.h>
-
 #include <frantic/channels/channel_map.hpp>
 #include <frantic/channels/channel_map_adaptor.hpp>
 #include <frantic/channels/channel_map_lerp.hpp>
@@ -53,7 +51,7 @@ static void particle_particle_interaction_increment_count( void* /*userData*/, c
 // This does an asymmetric increment, so that we can check that the interactions between two different particle grid
 // trees call this
 // function with the arguments in the right order.
-static void particle_particle_interaction_asymmetric_increment_count( void* /*userData*/, char* firstParticle,
+[[maybe_unused]] static void particle_particle_interaction_asymmetric_increment_count( void* /*userData*/, char* firstParticle,
                                                                       char* secondParticle ) {
     ( *reinterpret_cast<boost::int32_t*>( firstParticle ) )++;
     ( *reinterpret_cast<boost::int32_t*>( secondParticle ) ) += 2;
@@ -65,7 +63,7 @@ static void particle_particle_interaction_asymmetric_increment_count( void* /*us
 // This does an asymmetric increment, so that we can check that the interactions between two different particle grid
 // trees call this
 // function with the arguments in the right order.
-static void
+[[maybe_unused]] static void
 particle_grid_interaction_asymmetric_increment_count( void* /*userData*/, char* firstParticle,
                                                       const frantic::graphics::vector3f& /*gridParticlePosition*/,
                                                       char* gridParticle ) {
@@ -397,8 +395,6 @@ TEST( Particles_GridTree, Particle_Particle_Interaction ) {
     using namespace frantic::volumetrics;
     using namespace frantic::channels;
 
-    tbb::task_scheduler_init taskScheduleInit;
-
     // Put the interaction count first, so that our increment and decrement functions don't have to know a non-zero
     // offset.
     channel_map pcm;
@@ -408,7 +404,6 @@ TEST( Particles_GridTree, Particle_Particle_Interaction ) {
     pcm.end_channel_definition( 4, true );
 
     channel_accessor<boost::int32_t> countAcc = pcm.get_accessor<boost::int32_t>( _T("InteractionCount") );
-    channel_accessor<boost::int32_t> idAcc = pcm.get_accessor<boost::int32_t>( _T("ID") );
     channel_accessor<vector3f> posAcc = pcm.get_accessor<vector3f>( _T("Position") );
 
     boundbox3f bounds( vector3f(), vector3f( 11 ) );

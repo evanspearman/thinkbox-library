@@ -6,8 +6,6 @@
 
 #include "gtest/gtest.h"
 
-#include <tbb/task_scheduler_init.h>
-
 #include <frantic/geometry/trimesh3.hpp>
 #include <frantic/geometry/trimesh3_degeneracy_removal.hpp>
 #include <frantic/geometry/trimesh3_file_io.hpp>
@@ -839,7 +837,6 @@ TEST( Trimesh3, RemoveDuplicateHalfedges ) {
     using namespace frantic::geometry;
     using namespace frantic::graphics;
 
-    tbb::task_scheduler_init taskScheduleInit;
 
     trimesh3 mesh;
 
@@ -860,7 +857,6 @@ TEST( Trimesh3, RemoveFrostMarchingCubeDegeneracy ) {
     using namespace frantic::geometry;
     using namespace frantic::graphics;
 
-    tbb::task_scheduler_init taskScheduleInit;
 
     trimesh3 mesh;
 
@@ -1004,7 +1000,7 @@ TEST( Trimesh3, XMeshSequenceSaver ) {
     fileCount++;
 
     // alter a face
-    vector3 tempVec3 = mesh.faces_ref()[0];
+    [[maybe_unused]] vector3 tempVec3 = mesh.faces_ref()[0];
     mesh.faces_ref()[0] = mesh.faces_ref()[1];
     mesh.faces_ref()[1] = mesh.faces_ref()[0];
     xss.write_xmesh( mesh, fseq[fileCount] );

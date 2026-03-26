@@ -12,8 +12,6 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/scope_exit.hpp>
 
-#include <tbb/task_scheduler_init.h>
-
 #include <frantic/channels/channel_map.hpp>
 #include <frantic/channels/channel_map_adaptor.hpp>
 #include <frantic/channels/channel_map_lerp.hpp>

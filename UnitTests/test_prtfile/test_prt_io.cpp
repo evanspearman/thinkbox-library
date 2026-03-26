@@ -24,6 +24,8 @@
 
 #include <frantic/particles/particle_file_stream_factory.hpp>
 
+#include <boost/filesystem/directory.hpp>
+
 using frantic::files::scoped_file_cleanup;
 namespace fs = boost::filesystem;
 

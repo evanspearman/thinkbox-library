@@ -6,8 +6,6 @@
 
 #include "gtest/gtest.h"
 
-#include "tbb/task_scheduler_init.h"
-
 #include <frantic/volumetrics/implicitsurface/level_set_implicit_surface_policies.hpp>
 #include <frantic/volumetrics/implicitsurface/particle_implicit_surface_policies.hpp>
 #include <frantic/volumetrics/levelset/rle_level_set.hpp>
@@ -104,8 +102,6 @@ TEST( PopulateMeshChannels, DirectLinearRleLevelSetISpolicy ) {
 }
 
 TEST( PopulateMeshChannels, MeatballISPolicy ) {
-    tbb::task_scheduler_init taskScheduleInit;
-
     trimesh3 mesh;
 
     channel_map pcm;
@@ -216,8 +212,6 @@ TEST( PopulateMeshChannels, MeatballISPolicy ) {
 }
 
 TEST( PopulateMeshChannels, ParticleZhuBridsonISPolicy ) {
-    tbb::task_scheduler_init taskScheduleInit;
-
     trimesh3 mesh;
 
     channel_map pcm;
@@ -417,8 +411,6 @@ TEST( PopulateMeshChannels, ReconsturctionFilteredRleLevelSetISPolicy ) {
 }
 
 TEST( PopulateMeshChannels, UnionOfSphereISPolicy ) {
-    tbb::task_scheduler_init taskScheduleInit;
-
     trimesh3 mesh;
 
     channel_map pcm;

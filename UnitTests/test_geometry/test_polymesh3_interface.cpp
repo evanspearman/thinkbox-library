@@ -239,7 +239,7 @@ TEST_P( Polymesh3InterfaceCommon, Common ) {
     }
 }
 
-INSTANTIATE_TEST_CASE_P( Polymesh3InterfaceCommon, Polymesh3InterfaceCommon,
+INSTANTIATE_TEST_SUITE_P( Polymesh3InterfaceCommon, Polymesh3InterfaceCommon,
                          ::testing::Values( "ReadOnly", "Writable" ) );
 
 TEST( Polymesh3Interface, ReadOnly ) {

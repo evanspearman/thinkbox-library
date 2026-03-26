@@ -179,7 +179,7 @@ frantic::tstring get_reference_filename( const std::string& meshingMode, std::si
            boost::lexical_cast<frantic::tstring>( particleCount ) + _T(".rls");
 }
 
-void save_reference_density( const std::string& meshingMode, std::size_t particleCount,
+[[maybe_unused]] void save_reference_density( const std::string& meshingMode, std::size_t particleCount,
                              const voxel_coord_system& meshingVCS, const boundbox3& voxelExtents,
                              const std::vector<float>& density, float defaultOutsideDensity ) {
     std::vector<vector3> voxelCoords;
@@ -247,7 +247,7 @@ boundbox3 get_voxel_extents( const std::string& samplingMode, boost::int32_t ext
 class ParticleImplicitSurfacePolicyDensity
     : public ::testing::TestWithParam<std::tuple<std::string, std::string, std::size_t, boost::int32_t>> {};
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     ParticleImplicitSurfacePolicyDensity, ParticleImplicitSurfacePolicyDensity,
     ::testing::Combine( ::testing::Values( "union_of_spheres", "metaball", "zhu_bridson", "anisotropic" ),
                         ::testing::Values( "fill_voxel_corner_densities_3d", "fill_sparse_voxel_corner_densities_2d" ),

@@ -15,7 +15,7 @@ include(CMakePackageConfigHelpers)
 include(CTest)
 include(FindPkgConfig)
 
-option(BUILD_UNIT_TESTS "Build unit tests" OFF)
+option(BUILD_UNIT_TESTS "Build unit tests" ON)
 option(BUILD_WITH_TBB "Build with Intel Thread Building Blocks" ON)
 option(BUILD_WITH_E57 "Build with Xerces and libE57 to enable E57 file IO" OFF)
 option(BUILD_WITH_LZ4 "Build with LZ4 to enable PRT2 file format" OFF)
@@ -161,6 +161,7 @@ target_compile_definitions(thinkboxlibrary
 )
 
 if(BUILD_UNIT_TESTS)
+    find_package(GTest REQUIRED CONFIG)
     add_subdirectory(UnitTests)
 endif()
 

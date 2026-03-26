@@ -197,7 +197,7 @@ TEST( MeshMeasurement, Hausdorff ) {
 
     EXPECT_TRUE( particleCount <= numSamples * 2 );
 
-    for( int i = 0; i < particleCount; ++i ) {
+    for( std::size_t i = 0; i < particleCount; ++i ) {
         char* buffer = particlesA->at( i );
         EXPECT_NO_THROW( positions.get( buffer ) );
         EXPECT_NO_THROW( distances.get( buffer ) );

@@ -122,10 +122,10 @@ TEST( MarchingCubes, Topology ) {
                     if( x == 0 || x == dim.xsize() - 1 || y == 0 || y == dim.ysize() - 1 || z == 0 ||
                         z == dim.zsize() - 1 ) {
                         voxelCoords.push_back( vector3( x, y, z ) );
-                        distanceData.push_back( 10.f * ( (float)rand() / RAND_MAX ) );
+                        distanceData.push_back( 10.f * ( static_cast<float>( rand() ) / static_cast<float>( RAND_MAX ) ) );
                     } else {
                         voxelCoords.push_back( vector3( x, y, z ) );
-                        distanceData.push_back( 20.f * ( (float)rand() / RAND_MAX ) - 10.f );
+                        distanceData.push_back( 20.f * ( static_cast<float>( rand() ) / static_cast<float>( RAND_MAX ) ) - 10.f );
                     }
                 }
             }
@@ -155,7 +155,7 @@ TEST( MarchingCubes, Topology ) {
 
                     for( int b = 0; b < 3; ++b ) {
                         int u0 = faces[a][b], u1 = faces[a][( b + 1 ) % 3];
-                        if( v0 == u0 && v1 == u1 || v0 == u1 && v1 == u0 ) {
+                        if( (v0 == u0 && v1 == u1) || (v0 == u1 && v1 == u0) ) {
                             sharedFaces.push_back( faces[a] );
                         }
                     }
@@ -233,7 +233,6 @@ TEST( MarchingCubes, Topology ) {
 }
 
 TEST( MarchingCubes, FixMarchingCubesTopology ) {
-    tbb::task_scheduler_init taskScheduleInit;
     using namespace std;
     using namespace frantic::graphics;
     using namespace frantic::geometry;

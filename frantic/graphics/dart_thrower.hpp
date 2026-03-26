@@ -16,9 +16,6 @@
 
 // extern std::ofstream fout;
 
-#pragma warning( push )
-#pragma warning( disable : 4127 )
-
 namespace frantic {
 namespace graphics {
 
@@ -111,15 +108,9 @@ class level_set_rejection_policy {
             return false;
     }
 
-    level_set_rejection_policy& operator=( const level_set_rejection_policy& rhs ) {
-        m_clipLevelSet = rhs.m_clipLevelSet;
-        m_upperBound = rhs.m_upperBound;
-        m_lowerBound = rhs.m_lowerBound;
-        m_parentPolicy = rhs.m_parentPolicy;
-        m_worldBounds = rhs.m_worldBounds;
+    level_set_rejection_policy& operator=( const level_set_rejection_policy& rhs ) = default;
+    level_set_rejection_policy( const level_set_rejection_policy& ) = default;
 
-        return *this;
-    }
 };
 
 class particle_grid_tree_rejection_policy {
@@ -148,11 +139,8 @@ class particle_grid_tree_rejection_policy {
         return ( std::size_t )( bounds.volume() * particlesPerUnitVolume ) - m_particleTree->particle_count();
     }
 
-    particle_grid_tree_rejection_policy& operator=( const particle_grid_tree_rejection_policy& rhs ) {
-        m_particleTree = rhs.m_particleTree;
-        m_testRadius = rhs.m_testRadius;
-        return *this;
-    }
+    particle_grid_tree_rejection_policy& operator=( const particle_grid_tree_rejection_policy& rhs ) = default;
+    particle_grid_tree_rejection_policy( const particle_grid_tree_rejection_policy& ) = default;
 };
 
 class combined_rejection_policy {
@@ -220,10 +208,10 @@ class basic_dart_thrower3d {
   public:
     basic_dart_thrower3d( const frantic::channels::channel_map& pcm, frantic::graphics::boundbox3f bounds,
                           float voxelLength, Generator& theGen )
-        : m_baseGen( theGen )
+        : m_channelMap( pcm )
+        , m_baseGen( theGen )
         , m_disType( 0.f, 1.f )
-        , m_rnd( m_baseGen, m_disType )
-        , m_channelMap( pcm ) {
+        , m_rnd( m_baseGen, m_disType ) {
         m_voxelLength = voxelLength;
         m_boundBox = bounds;
     }
@@ -291,7 +279,7 @@ class basic_dart_thrower3d {
 
                 count++;
 
-                if( (int)count >= theoreticalCount ) {
+                if( count >= theoreticalCount ) {
                     break;
                 }
             }
@@ -373,10 +361,10 @@ class rejection_dart_thrower3d {
 
     rejection_dart_thrower3d( const frantic::channels::channel_map& pcm, frantic::graphics::boundbox3f bounds,
                               float voxelLength, Generator& theGen )
-        : m_baseGen( theGen )
+        : m_channelMap( pcm )
+        , m_baseGen( theGen )
         , m_disType( 0.f, 1.f )
-        , m_rand( m_baseGen, m_disType )
-        , m_channelMap( pcm ) {
+        , m_rand( m_baseGen, m_disType ) {
         m_voxelLength = voxelLength;
         m_boundBox = bounds;
         m_rejectPolicy = RejectionPolicy( &m_boundBox );
@@ -427,7 +415,6 @@ class rejection_dart_thrower3d {
         outDarts.reset( m_channelMap, m_voxelLength );
         psTreeReset.exit();
 
-        std::size_t insertedCount = 0;
         size_t maxAttemptCount = maxIterations;
         float innerRadius = radius * 2.f;
         float outerRadius = innerRadius * 2.f;
@@ -467,8 +454,6 @@ class rejection_dart_thrower3d {
         boost::variate_generator<Generator, boost::uniform_on_sphere<float>> sphereRand(
             m_baseGen, boost::uniform_on_sphere<float>( 3 ) );
 
-        vector3f boundsMin = m_boundBox.minimum();
-        vector3f boundsMax = m_boundBox.maximum();
 
         // FF_LOG(debug) << "\t\tAvailable generations: " << availableDarts.size() << std::endl;
         // for(int generation=0; generation < m_genCount; ++generation) {
@@ -515,7 +500,6 @@ class rejection_dart_thrower3d {
                         temp.tryCount = 0;
                         temp.placedNeighbors.reserve( 2 );
                         availableDarts[0].push_back( temp );
-                        ++insertedCount;
 
                         //	}
                     }
@@ -532,12 +516,9 @@ class rejection_dart_thrower3d {
         // return;
 
         vector3f offset( outerRadius );
-        std::size_t count = insertedCount;
 
         std::vector<char> rejectedParticles;
 
-        size_t promotedCount = 0;
-        size_t iterationCount = 0;
         available_dart temp;
 
         temp.tryCount = 0;
@@ -620,14 +601,12 @@ class rejection_dart_thrower3d {
                                 // remove it from the younger generation
                                 availableDarts[generation].pop_back();
                                 // std::cout << "promoting particle...\n";
-                                ++promotedCount;
                             }
 
                             temp.point = dart;
 
                             availableDarts[generation].push_back( temp );
 
-                            count++;
                             psInsert.exit();
                         } //*/
                         else {
@@ -664,7 +643,6 @@ class rejection_dart_thrower3d {
                     }
                 }
 
-                ++iterationCount;
                 psThrow.exit();
                 // if(  count >= theoreticalCount ) {
                 //	break;
@@ -868,8 +846,6 @@ class generation_limit_dart_thrower3d {
 
         boost::variate_generator<Generator, boost::uniform_on_sphere<float>> sphereRand( m_baseGen, sphereBoost );
 
-        vector3f boundsMin = m_boundBox.minimum();
-        vector3f boundsMax = m_boundBox.maximum();
 
         // std::ofstream fout ("c:\\temp\\darts.log");
 
@@ -928,7 +904,6 @@ class generation_limit_dart_thrower3d {
         std::vector<char> rejectedParticles;
 
         size_t promotedCount = 0;
-        size_t iterationCount = 0;
 
         genColor.g = 0.15f;
 
@@ -1042,7 +1017,6 @@ class generation_limit_dart_thrower3d {
 
                 psThrow.exit();
 
-                ++iterationCount;
 
                 // if(  count >= theoreticalCount ) {
                 //	break;
@@ -1101,4 +1075,3 @@ class generation_limit_dart_thrower3d {
 } // namespace graphics
 } // namespace frantic
 
-#pragma warning( pop )

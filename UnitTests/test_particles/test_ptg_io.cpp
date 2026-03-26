@@ -36,7 +36,7 @@ template <class VecType>
 static void create_test_ptg_file( frantic::tstring fileName, const transform4fd& xform, const VecType& pos ) {
     std::ofstream fout( fileName.c_str(), std::ios::out | std::ios::binary );
     fout.write( "PTG", 4 );
-    write_to_file<boost::int32_t>( 2458887111, fout );
+    write_to_file<boost::int32_t>( static_cast<boost::int32_t>( 2458887111 ), fout );
     puts_to_ptg_file( "%%header_begin", fout );
     puts_to_ptg_file( "%%version", fout );
     write_to_file<boost::int32_t>( 1, fout );

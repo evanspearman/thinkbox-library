@@ -496,10 +496,10 @@ class polymesh3_cvt_vertex_accessor : public polymesh3_vertex_accessor_base {
 
   public:
     polymesh3_cvt_vertex_accessor()
-        : m_numVerts( 0 )
-        , m_pData( 0 )
-        , m_primitiveSize( 0 ) {}
-
+        : m_pData( 0 )
+        , m_primitiveSize( 0 )
+        , m_numVerts( 0 ) {}
+ 
     /**
      * @return true if the vertex data is valid.  If false, data access will cause undefined
      * behavior.

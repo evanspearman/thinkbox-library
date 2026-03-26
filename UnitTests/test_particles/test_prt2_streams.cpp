@@ -4,10 +4,7 @@
 #include "stdafx.h"
 // clang-format on
 
-#include <fstream>
-
-#include "tbb/task_scheduler_init.h"
-
+#include <filesystem>
 #include <frantic/files/files.hpp>
 #include <frantic/particles/prt_metadata.hpp>
 #include <frantic/particles/streams/prt2_particle_istream.hpp>
@@ -29,8 +26,6 @@ using frantic::graphics::vector3f;
 using frantic::particles::particle_array;
 
 TEST( PRT2Stream, EmptyFile ) {
-    tbb::task_scheduler_init taskScheduler;
-
     frantic::channels::channel_map cm;
     cm.define_channel<frantic::graphics::vector3f>( _T("Position") );
     cm.end_channel_definition();
@@ -71,7 +66,7 @@ void test_PRT2Stream_RoundTrip( prt2_compression_t compressionScheme ) {
     if( file_exists( testFile ) ) {
         delete_file( testFile );
     }
-    prt2_particle_ostream pout( testFile, pcm, pcm, compressionScheme, true, boost::filesystem::path(), &globalMetadata,
+    prt2_particle_ostream pout( testFile, pcm, pcm, compressionScheme, true, std::filesystem::path(), &globalMetadata,
                                 &channelMetadata, 3 * ( 12 + 4 ) );
 
     channel_cvt_accessor<vector3f> posAcc = pcm.get_cvt_accessor<vector3f>( _T("Position") );

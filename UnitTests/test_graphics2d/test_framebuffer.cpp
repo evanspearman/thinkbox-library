@@ -111,7 +111,7 @@ TEST( Framebuffer, FloodFill ) {
             EXPECT_EQ( fillColor.b, found.b );
         }
 
-        for( size_t y = 0; y < copyBuffer.height(); ++y ) {
+        for( int y = 0; y < copyBuffer.height(); ++y ) {
 
             color3f outsideLeft = copyBuffer.get_pixel( vector2( 0, vector2::value_type( y ) ) );
 
@@ -127,7 +127,7 @@ TEST( Framebuffer, FloodFill ) {
             EXPECT_EQ( clearColor.b, outsideRight.b );
         }
 
-        for( size_t x = 0; x < copyBuffer.width(); ++x ) {
+        for( int x = 0; x < copyBuffer.width(); ++x ) {
             color3f outsideTop = copyBuffer.get_pixel( vector2( vector2::value_type( x ), 0 ) );
 
             EXPECT_EQ( clearColor.r, outsideTop.r );

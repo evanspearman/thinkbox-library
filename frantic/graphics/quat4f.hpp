@@ -65,19 +65,19 @@ class quat4t {
     template <class OtherFloatType>
     quat4t( const quat4t<OtherFloatType>& t,
             typename boost::enable_if_c<( sizeof( OtherFloatType ) < sizeof( FloatType ) ), int*>::type = 0 )
-        : w( t.w )
-        , x( t.x )
+        : x( t.x )
         , y( t.y )
-        , z( t.z ) {}
+        , z( t.z )
+        , w( t.w ) {}
 
     /** Explicit cast required for conversion from larger float type. */
     template <class OtherFloatType>
     explicit quat4t( const quat4t<OtherFloatType>& t,
                      typename boost::enable_if_c<( sizeof( OtherFloatType ) > sizeof( FloatType ) ), int*>::type = 0 )
-        : w( float_type( t.w ) )
-        , x( float_type( t.x ) )
+        : x( float_type( t.x ) )
         , y( float_type( t.y ) )
-        , z( float_type( t.z ) ) {}
+        , z( float_type( t.z ) )
+        , w( float_type( t.w ) ) {}
 
     float_type real_part() const { return w; }
 

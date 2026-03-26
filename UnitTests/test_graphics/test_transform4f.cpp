@@ -37,7 +37,7 @@ TEST( Transform4f, Basics ) {
     for( int decomposeTestNumber = 0; decomposeTestNumber < 500; ++decomposeTestNumber ) {
         float data[16];
         for( int i = 0; i < 16; ++i )
-            data[i] = 2 * ( float( rand() ) / RAND_MAX ) - 1;
+            data[i] = 2 * ( static_cast<float>( rand() ) / static_cast<float>( RAND_MAX ) ) - 1;
         xform.set_to_array( data );
 
         xformInverse = xform.to_inverse();
@@ -64,7 +64,7 @@ TEST( Transform4f, Basics ) {
         transform4f::from_cubeface( cube_face::CF_Z_POS ).to_inverse(), // cube_face::CF_REAR   is 4
         transform4f::from_cubeface( cube_face::CF_Z_NEG ).to_inverse(), // cube_face::CF_FRONT  is 5
     };
-    transform4f transPerspective =
+    [[maybe_unused]] transform4f transPerspective =
         transform4f::from_fov_perspective( float( M_PI ) / 2.0f, float( M_PI ) / 2.0f, 1.0f, 100.0f );
 
     for( int cubefaceTestNumber = 0; cubefaceTestNumber < 500; ++cubefaceTestNumber ) {
@@ -197,7 +197,7 @@ TEST( Transform4f, Decompose ) {
     for( int decomposeTestNumber = 0; decomposeTestNumber < 500; ++decomposeTestNumber ) {
         float data[16];
         for( int i = 0; i < 16; ++i )
-            data[i] = 10 * ( float( rand() ) / RAND_MAX ) - 5;
+            data[i] = 10 * ( static_cast<float>( rand() ) / static_cast<float>( RAND_MAX ) ) - 5;
         xform.set_to_array( data );
 
         transform4f persp, rotate, stretch;

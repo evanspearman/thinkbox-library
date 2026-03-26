@@ -188,4 +188,4 @@ TEST_P( XYZRPacketArrayLoad, Load ) {
 #endif
 }
 
-INSTANTIATE_TEST_CASE_P( XYZRPacketArrayLoad, XYZRPacketArrayLoad, ::testing::Values( true, false ) );
+INSTANTIATE_TEST_SUITE_P( XYZRPacketArrayLoad, XYZRPacketArrayLoad, ::testing::Values( true, false ) );

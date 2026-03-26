@@ -58,7 +58,7 @@ class indexer {
 
     void set_dimension( IntType dimension, IntType dimensionSize ) { m_dimensions[dimension] = dimensionSize; }
 
-    IntType get_dimension( IntType dimension ) const { return m_dimensions; }
+    IntType get_dimension( [[maybe_unused]] IntType dimension ) const { return m_dimensions; }
 
     IntType address_space() const {
         return std::accumulate( m_dimensions, m_dimensions + Dimension, static_cast<IntType>( 1 ),

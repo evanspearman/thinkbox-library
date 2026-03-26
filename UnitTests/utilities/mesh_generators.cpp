@@ -177,12 +177,12 @@ void make_wheel_mesh( frantic::geometry::trimesh3& mesh, size_t wheelCount ) {
 
     mesh.add_vertex( 0.0f, 0.0f, 0.0f );
 
-    for( int i = 0; i < wheelCount; ++i ) {
+    for( std::size_t i = 0; i < wheelCount; ++i ) {
         double rotation = ( double( i ) / double( wheelCount ) ) * ( 2.0 * M_PI );
         mesh.add_vertex( float( std::cos( rotation ) ), float( std::sin( rotation ) ), 0.0f );
     }
 
-    for( int i = 0; i < wheelCount; ++i ) {
+    for( std::size_t i = 0; i < wheelCount; ++i ) {
         mesh.add_face( 0, i + 1, ( ( i + 1 ) % wheelCount ) + 1 );
     }
 }

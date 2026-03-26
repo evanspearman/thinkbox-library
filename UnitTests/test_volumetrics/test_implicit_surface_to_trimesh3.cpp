@@ -16,8 +16,6 @@
 #pragma warning( disable : 4996 )
 #endif
 
-#include <tbb/task_scheduler_init.h>
-
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/make_shared.hpp>
 
@@ -265,8 +263,6 @@ void create_unit_radius_particle_mesh( const meshing_parameters& params, const p
 class ConvertParticlesToTrimesh3 : public ::testing::TestWithParam<std::string> {};
 
 TEST_P( ConvertParticlesToTrimesh3, SingleParticleUnitRadiusMesh ) {
-    tbb::task_scheduler_init taskScheduler;
-
     trimesh3 mesh;
 
     meshing_parameters params;
@@ -304,7 +300,7 @@ TEST_P( ConvertParticlesToTrimesh3, SingleParticleUnitRadiusMesh ) {
     EXPECT_LT( hausdorff_distance_two_sided( sphereMesh, mesh, true, true, 1000 ), 0.01 );
 }
 
-INSTANTIATE_TEST_CASE_P( ConvertParticlesToTrimesh3, ConvertParticlesToTrimesh3,
+INSTANTIATE_TEST_SUITE_P( ConvertParticlesToTrimesh3, ConvertParticlesToTrimesh3,
                          ::testing::ValuesIn( get_all_meshing_modes() ) );
 
 class TestMeshingModeAndParticleCount : public ::testing::TestWithParam<std::tuple<std::string, std::size_t>> {};
@@ -328,8 +324,6 @@ void get_sorted_density( const frantic::geometry::trimesh3& mesh, std::vector<fl
 // Test whether vertex refinement moves the mesh closer to zero
 // density, that is, the true surface of the level set.
 TEST_P( TestMeshingModeAndParticleCount, VertRefinement ) {
-    tbb::task_scheduler_init taskScheduler;
-
     meshing_parameters params;
     params.meshingMode = std::get<0>( GetParam() );
     params.createDensityChannel = true;
@@ -494,7 +488,7 @@ TEST_P( TestMeshingModeAndParticleCount, TwoPositionChannelBlending ) {
     EXPECT_TRUE( colorAcc[leftVertexIndex].y < colorAcc[rightVertexIndex].y );
 }
 
-INSTANTIATE_TEST_CASE_P( ConvertParticlesToTrimesh3MeshingModeAndParticleCount, TestMeshingModeAndParticleCount,
+INSTANTIATE_TEST_SUITE_P( ConvertParticlesToTrimesh3MeshingModeAndParticleCount, TestMeshingModeAndParticleCount,
                          ::testing::Combine( ::testing::ValuesIn( get_all_meshing_modes() ),
                                              // Testing 1 particle to hit the scalar code path,
                                              // and 5 to hit the SIMD code path.

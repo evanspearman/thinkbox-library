@@ -168,7 +168,7 @@ inline float_v float_v::select( const float_v& a, const float_v& b, const float_
     boost::uint32_t aBits = detail::bits_from_float( a.native() );
     boost::uint32_t bBits = detail::bits_from_float( b.native() );
     boost::uint32_t maskBits = detail::bits_from_float( mask.native() );
-    boost::uint32_t result = bBits & maskBits | aBits & ~maskBits;
+    boost::uint32_t result = ( bBits & maskBits ) | ( aBits & ~maskBits );
     return detail::float_from_bits( result );
 #endif
 }

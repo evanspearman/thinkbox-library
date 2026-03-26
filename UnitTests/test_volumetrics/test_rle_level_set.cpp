@@ -70,8 +70,8 @@ TEST( RleLevelSet, Staggered_Extrapolation ) {
     for( int test = 0; test < testCount; ++test ) {
 
         // An arbitrary extrapolation boundary, within the rle level set.
-        float extrapStartDist = 2.25f * ( float( rand() ) / RAND_MAX ) - 1.55f,
-              extrapEndDist = 2.25f * ( float( rand() ) / RAND_MAX ) - 1.55f;
+        float extrapStartDist = 2.25f * ( static_cast<float>( rand() ) / static_cast<float>( RAND_MAX ) ) - 1.55f,
+              extrapEndDist = 2.25f * ( static_cast<float>( rand() ) / static_cast<float>( RAND_MAX ) ) - 1.55f;
         FF_LOG( debug ) << "Extrapolation from " << extrapStartDist << " to " << extrapEndDist << endl;
         float interiorDist = ( std::min )( extrapStartDist, extrapEndDist );
         float exteriorDist = ( std::max )( extrapStartDist, extrapEndDist );
@@ -446,16 +446,13 @@ TEST( RleLevelSet, Trim_To_Populated ) {
         // Create a randomized 'populated' channel
         rls.add_channel<boost::uint8_t>( _T("Populated") );
 
-        int populatedCount = 0, unpopulatedCount = 0;
         rle_channel_accessor<boost::uint8_t> pop = rls.get_channel_accessor<boost::uint8_t>( _T("Populated") );
         for( size_t i = 0, ie = pop.size(); i != ie; ++i ) {
-            float randVar = float( rand() ) / RAND_MAX;
+            float randVar = static_cast<float>( rand() ) / static_cast<float>( RAND_MAX );
             if( randVar > 0.5f ) {
                 pop[i] = true;
-                ++populatedCount;
             } else {
                 pop[i] = false;
-                ++unpopulatedCount;
             }
         }
 
@@ -564,7 +561,6 @@ TEST( RleLevelSet, Switch_RLE_Index_Spec ) {
         // Make the accessor point to the channel in the new level set
         diAccessor = rlsSwitch.get_channel_accessor<boost::int32_t>( _T("DataIndex") );
 
-        int matchCount = 0;
         // Go through all the voxels in the switched level set, and make sure the values are good.
         for( rle_defined_iterator i = rlsSwitch.get_rle_index_spec().begin(), ie = rlsSwitch.get_rle_index_spec().end();
              i != ie; ++i ) {
@@ -572,7 +568,6 @@ TEST( RleLevelSet, Switch_RLE_Index_Spec ) {
             boost::int32_t copiedDataIndexFromChannel = diAccessor[i.get_data_index()];
             if( originalDataIndex >= 0 ) {
                 EXPECT_EQ( copiedDataIndexFromChannel, originalDataIndex );
-                ++matchCount;
             } else {
                 EXPECT_EQ( copiedDataIndexFromChannel, 0 );
             }
@@ -600,13 +595,13 @@ TEST( RleLevelSet, Compute_Upwind_Gradient ) {
         rle_level_set rls( vcs, ris, distanceData, 1, 1 );
 
         // Create a random plane
-        plane3f p( vector3f::from_unit_random(), 30.f * ( float( rand() ) / RAND_MAX - 0.5f ) );
+        plane3f p( vector3f::from_unit_random(), 30.f * ( static_cast<float>( rand() ) / static_cast<float>( RAND_MAX ) - 0.5f ) );
         // Create a 'Value' channel with this plane function
         rls.add_channel<float>( _T("Value") );
         rle_channel_accessor<float> vAccessor = rls.get_channel_accessor<float>( _T("Value") );
         for( rle_defined_iterator i = ris.begin(), ie = ris.end(); i != ie; ++i ) {
             vAccessor[i.get_data_index()] = p.get_signed_distance_to_plane( vcs.get_world_coord( i.get_coord() ) );
-            rls[i.get_data_index()] = float( rand() ) / RAND_MAX;
+            rls[i.get_data_index()] = static_cast<float>( rand() ) / static_cast<float>( RAND_MAX );
         }
 
         rls.compute_upwind_gradient( _T("Value"), _T("Grad"), _T("Populated") );
@@ -614,14 +609,11 @@ TEST( RleLevelSet, Compute_Upwind_Gradient ) {
         rle_channel_accessor<vector3f> gAcc = rls.get_channel_accessor<vector3f>( _T("Grad") );
         rle_channel_accessor<unsigned char> pAcc = rls.get_channel_accessor<unsigned char>( _T("Populated") );
 
-        int unpopCount = 0, popCount = 0;
         // Go through all the voxels in the switched level set, and make sure the values are good.
         for( rle_defined_iterator i = ris.begin(), ie = ris.end(); i != ie; ++i ) {
             if( pAcc[i.get_data_index()] ) {
                 EXPECT_LT( ( p.normal() - gAcc[i.get_data_index()] ).get_magnitude(), 0.0001f );
-                popCount++;
             } else {
-                unpopCount++;
             }
         }
     }

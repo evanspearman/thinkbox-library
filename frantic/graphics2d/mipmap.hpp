@@ -82,7 +82,7 @@ nearest_mipmap_resolution( const std::vector<frantic::graphics2d::image_channel<
         }
 
         return mipmap.front();
-    } else if( resolution >= mipmap.back().width() || mipmap.size() == 2 ) {
+    } else if( resolution >= static_cast<std::size_t>( mipmap.back().width() ) || mipmap.size() == 2 ) {
         return mipmap.back();
     } else {
         const float logged = std::log( static_cast<float>( resolution ) ) / boost::math::constants::ln_two<float>();

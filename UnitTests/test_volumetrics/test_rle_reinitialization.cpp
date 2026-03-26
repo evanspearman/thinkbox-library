@@ -246,18 +246,18 @@ TEST_F( ReinitializeSignedDistance, FromPopulatedDistanceLesserThanOne ) {
     FF_LOG( debug ) << "seed:" << seed << std::endl;
 
     float bias;
-    if( ( float( rand() ) / RAND_MAX ) - 0.5f < 0.f )
+    if( ( static_cast<float>( rand() ) / static_cast<float>( RAND_MAX ) ) - 0.5f < 0.f )
         bias = -1.f;
     else
         bias = 1.f;
 
     for( int i = 0; i < 6; ++i )
         for( int j = 0; j < 6; ++j )
-            rls_reinit[i * 6 + j] = bias * ( float( rand() ) / RAND_MAX ) * 0.5f;
+            rls_reinit[i * 6 + j] = bias * ( static_cast<float>( rand() ) / static_cast<float>( RAND_MAX ) ) * 0.5f;
 
     for( int i = 0; i < 4; ++i ) {
-        int r = (int)( ( float( rand() ) / RAND_MAX ) * rls_reinit.size() );
-        rls_reinit[r] = -bias * ( float( rand() ) / RAND_MAX ) * 0.5f;
+        int r = (int)( ( static_cast<float>( rand() ) / static_cast<float>( RAND_MAX ) ) * rls_reinit.size() );
+        rls_reinit[r] = -bias * ( static_cast<float>( rand() ) / static_cast<float>( RAND_MAX ) ) * 0.5f;
     }
 
     const ris_adjacency& adj2 = rls_reinit.get_rle_index_spec().get_cached_adjacency();

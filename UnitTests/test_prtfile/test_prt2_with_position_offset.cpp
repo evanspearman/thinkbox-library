@@ -4,16 +4,9 @@
 #include "stdafx.h"
 // clang-format on
 
-#include "tbb/task_scheduler_init.h"
-
 #include <frantic/particles/prt_metadata.hpp>
 #include <frantic/prtfile/prt2_reader.hpp>
 #include <frantic/prtfile/prt2_writer.hpp>
-
-#pragma warning( push )
-#pragma warning( disable : 4100 4512 )
-#include <tbb/pipeline.h>
-#pragma warning( pop )
 
 using namespace std;
 using frantic::channels::channel_cvt_accessor;
@@ -229,7 +222,6 @@ TEST( PRT2WithPositionOffsets, ReadHandcraftedFile ) {
 }
 
 TEST( PRT2WithPositionOffsets, WriteHandcraftedFile ) {
-    tbb::task_scheduler_init taskScheduleInit;
     channel_map pcm;
     pcm.end_channel_definition();
     pcm.append_channel<vector3f>( _T("Position") );
@@ -252,64 +244,72 @@ TEST( PRT2WithPositionOffsets, WriteHandcraftedFile ) {
         dens.set( parr.at( i ), 1.f );
     }
 
+    using particle_chunk = frantic::prtfile::prt2_writer::particle_chunk;
+
     // A chunk generator that takes the handcrafted data and allows it to be accessed in a pull format.
-    class chunk_gen : public tbb::filter {
+    class chunk_gen {
         particle_array& m_particles;
-        int m_i;
+        mutable int m_i;
 
       public:
-        chunk_gen( particle_array& particles )
-            : tbb::filter( true )
-            , m_particles( particles )
+        explicit chunk_gen( particle_array& particles )
+            : m_particles( particles )
             , m_i( -1 ) {}
 
-        void* operator()( void* ) {
+        particle_chunk* operator()( oneapi::tbb::flow_control& fc ) const {
             switch( ++m_i ) {
             case 0: {
-                prt2_writer::particle_chunk* chunk = new prt2_writer::particle_chunk();
+                auto* chunk = new particle_chunk();
                 chunk->positionOffset.set( 1.5f, -1.f, 2.f );
                 chunk->usePositionOffset = true;
                 chunk->particleCount = 2;
                 chunk->uncompressed.resize( m_particles.get_channel_map().structure_size() * 2 );
-                memcpy( &chunk->uncompressed[0], m_particles.at( 0 ), chunk->uncompressed.size() );
+                std::memcpy( &chunk->uncompressed[0], m_particles.at( 0 ), chunk->uncompressed.size() );
                 return chunk;
             }
             case 1: {
-                prt2_writer::particle_chunk* chunk = new prt2_writer::particle_chunk();
+                auto* chunk = new particle_chunk();
                 chunk->positionOffset.set( 0.f );
                 chunk->usePositionOffset = true;
                 chunk->particleCount = 3;
                 chunk->uncompressed.resize( m_particles.get_channel_map().structure_size() * 3 );
-                memcpy( &chunk->uncompressed[0], m_particles.at( 2 ), chunk->uncompressed.size() );
+                std::memcpy( &chunk->uncompressed[0], m_particles.at( 2 ), chunk->uncompressed.size() );
                 return chunk;
             }
             case 2: {
-                prt2_writer::particle_chunk* chunk = new prt2_writer::particle_chunk();
+                auto* chunk = new particle_chunk();
                 chunk->positionOffset.set( 1, 2, 3 );
                 chunk->usePositionOffset = true;
                 chunk->particleCount = 3;
                 chunk->uncompressed.resize( m_particles.get_channel_map().structure_size() * 3 );
-                memcpy( &chunk->uncompressed[0], m_particles.at( 5 ), chunk->uncompressed.size() );
+                std::memcpy( &chunk->uncompressed[0], m_particles.at( 5 ), chunk->uncompressed.size() );
                 return chunk;
             }
-            case 3: {
-                return &prt2_writer::TERMINATION_CHUNK;
-            }
-            default: {
-                return NULL;
-            }
+            case 3:
+                return &frantic::prtfile::prt2_writer::TERMINATION_CHUNK;
+
+            default:
+                fc.stop();
+                return nullptr;
             }
         }
     };
 
-    boost::shared_ptr<tbb::filter> chunkGen( new chunk_gen( parr ) );
+    chunk_gen chunkGen( parr );
     frantic::logging::null_progress_logger nullProgress;
-    prt2.write_particle_chunks( chunkGen, 8, nullProgress, true, frantic::prtfile::prt2_compression_uncompressed );
+    prt2.write_particle_chunks(
+        chunkGen,
+        8,
+        nullProgress,
+        _T(""),
+        true,
+        frantic::prtfile::prt2_compression_uncompressed );
 
     // Compare what we've written in the stream with the handcrafted data
     os->flush();
     string s = os->str();
     prt2.close();
+
 
     /*
     // If debugging is necessary, use a hexdump tool like HxD to compare the two files:

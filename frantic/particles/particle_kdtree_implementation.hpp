@@ -10,7 +10,7 @@ inline frantic::particles::particle_kdtree<P>::particle_kdtree() {
 }
 
 template <class P>
-inline frantic::particles::particle_kdtree<P>::~particle_kdtree() {}
+inline frantic::particles::particle_kdtree<P>::~particle_kdtree<P>() {}
 
 template <class P>
 inline void frantic::particles::particle_kdtree<P>::clear() {

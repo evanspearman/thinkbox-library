@@ -422,8 +422,6 @@ TEST( RleIndexSpecTest, PairwiseRunIterator ) {
         // These should be all set to 1 during the iteration
         vector<char> touchedA( risA.data_size(), 0 ), touchedB( risB.data_size(), 0 );
 
-        int subIntervalCount = 0;
-
         for( int z = testBounds.zminimum(); z <= testBounds.zmaximum(); ++z ) {
             for( int y = testBounds.yminimum(); y <= testBounds.ymaximum(); ++y ) {
                 rle_pairwise_run_iterator i( risA, risA.y_to_b( y ), risA.z_to_c( z ), risB, risB.y_to_b( y ),
@@ -431,7 +429,6 @@ TEST( RleIndexSpecTest, PairwiseRunIterator ) {
                     ie;
                 int x = i.get_xmin();
                 for( ; i != ie; ++i ) {
-                    ++subIntervalCount;
                     // Ensure that all the intervals we process are contiguous
                     EXPECT_EQ( x, i.get_xmin() );
                     x += i.get_xsize();

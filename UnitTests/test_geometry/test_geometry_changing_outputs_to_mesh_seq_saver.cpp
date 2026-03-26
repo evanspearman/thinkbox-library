@@ -59,11 +59,11 @@ static frantic::tstring get_channel_faces_file( const frantic::tstring& baseName
     return get_faces_file( frantic::files::add_before_sequence_number( baseName, _T( "_channel_" ) + channelName ) );
 }
 
-static frantic::tstring get_facedata_file( const frantic::tstring& baseName, const frantic::tstring& channelName ) {
-    return frantic::files::replace_extension(
-        frantic::files::add_before_sequence_number( baseName, _T( "_channel_" ) + channelName + _T( "_facedata" ) ),
-        _T( ".xmdat" ) );
-}
+// static frantic::tstring get_facedata_file( const frantic::tstring& baseName, const frantic::tstring& channelName ) {
+//     return frantic::files::replace_extension(
+//         frantic::files::add_before_sequence_number( baseName, _T( "_channel_" ) + channelName + _T( "_facedata" ) ),
+//         _T( ".xmdat" ) );
+// }
 
 static frantic::geometry::polymesh3_ptr make_polymesh( const std::vector<frantic::graphics::vector3f>& verts,
                                                        const std::vector<int>& indices,

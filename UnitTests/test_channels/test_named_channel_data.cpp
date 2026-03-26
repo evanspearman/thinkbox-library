@@ -21,7 +21,7 @@ typedef ::testing::Types<boost::int8_t, boost::int16_t, boost::int32_t, boost::i
                          boost::uint32_t, boost::uint64_t, half, float, double>
     NumericChannelDataTypes;
 
-TYPED_TEST_CASE( OffsetInputWeightedSumCombine, NumericChannelDataTypes );
+TYPED_TEST_SUITE( OffsetInputWeightedSumCombine, NumericChannelDataTypes, );
 
 TYPED_TEST( OffsetInputWeightedSumCombine, Offset1Arity1 ) {
     const std::size_t arity = 1;

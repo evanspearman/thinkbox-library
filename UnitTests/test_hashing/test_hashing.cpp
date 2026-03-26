@@ -8,8 +8,6 @@
 
 #include <boost/cstdint.hpp>
 
-#include <tbb/task_scheduler_init.h>
-
 #include <frantic/hashing/blake2_hash.hpp>
 #include <frantic/hashing/hashing.hpp>
 
@@ -45,8 +43,6 @@ TEST( Hashing, Blake2bp ) {
 
 TEST( Hashing, Blake2bpLarge ) {
     // Hash an array large enough to use the multithreaded code path
-    tbb::task_scheduler_init taskScheduler;
-
     // hash I generated myself, so it shouldn't necessarily be trusted
     std::vector<unsigned char> zeros( 1000000 );
     const std::string expected = "b56224e79b8305fc7b2045ef9fd02f4d"
@@ -74,8 +70,6 @@ TEST( Hashing, Blake2sp ) {
 
 TEST( Hashing, Blake2spLarge ) {
     // Hash an array large enough to use the multithreaded code path
-    tbb::task_scheduler_init taskScheduler;
-
     // hash I generated myself, so it shouldn't necessarily be trusted
     std::vector<unsigned char> zeros( 1000000 );
     const std::string expected = "175ce84373591fdd19a9eeec7fd7e3ae"
