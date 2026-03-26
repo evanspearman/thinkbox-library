@@ -295,7 +295,7 @@ void collect_hull_polygon( const std::vector<frantic::graphics2d::vector2>& edge
 
 namespace {
 
-inline double distance_to_supporting_line( const frantic::graphics2d::vector2f& segStart,
+[[maybe_unused]] inline double distance_to_supporting_line( const frantic::graphics2d::vector2f& segStart,
                                            const frantic::graphics2d::vector2f& segEnd,
                                            const frantic::graphics2d::vector2f& point ) {
     Line2f line( Line2f::Through( to_eigen_t( segStart ), to_eigen_t( segEnd ) ) );

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 
+#include "frantic/particles/prt_metadata.hpp"
 #include <frantic/channels/channel_map_adaptor.hpp>
 #include <frantic/channels/property_map.hpp>
 #include <frantic/files/compression_stream.hpp>
@@ -37,27 +38,27 @@ class rpc_channel {
     rpc_channel( const frantic::tstring& filename, const frantic::tstring& name, const std::size_t offset,
                  const std::size_t compressedSize, const std::size_t arity,
                  const frantic::channels::data_type_t dataType, const std::size_t rpcType )
-        : m_name( name )
+        : m_fin( filename.c_str(), std::ios::binary | std::ios::in )
+        , m_name( name )
         , m_offset( offset )
-        , m_fin( filename.c_str(), std::ios::binary | std::ios::in )
         , m_compressedSize( compressedSize )
         , m_uncompressedSize( 0 )
         , m_arity( arity )
-        , m_channelType( dataType )
         , m_rpcType( rpcType )
+        , m_dataSize( frantic::channels::sizeof_channel_data_type( dataType ) )
         , m_byteStart( 0 )
-        , m_dataSize( frantic::channels::sizeof_channel_data_type( dataType ) ) {
+        , m_channelType( dataType ) {
         m_fin.seekg( m_offset, std::ios::beg );
         m_inflateStream.open( m_fin, m_name );
     }
 
     const frantic::tstring& get_name() const { return m_name; }
 
-    const std::size_t get_arity() const { return m_arity; }
+    std::size_t get_arity() const { return m_arity; }
 
-    const frantic::channels::data_type_t get_channel_type() const { return m_channelType; }
+    frantic::channels::data_type_t get_channel_type() const { return m_channelType; }
 
-    const std::size_t get_data_size() const { return m_dataSize; }
+    std::size_t get_data_size() const { return m_dataSize; }
 
     void close() {
         m_inflateStream.close();
@@ -110,24 +111,24 @@ class realflow_rpc_particle_istream : public particle_istream {
 
   public:
     realflow_rpc_particle_istream( const frantic::tstring& file )
-        : m_filename( file )
+        : m_particleRead( false )
         , m_fin( frantic::files::tfopen( file.c_str(), _T("rb") ) )
-        , m_particleIndex( -1 )
-        , m_particleRead( false )
-        , m_particleChunkStart( 0 )
+        , m_filename( file )
         , m_particleLocationInChunk( 0 )
+        , m_particleChunkStart( 0 )
+        , m_particleIndex( -1 )
         , m_convertTextureChannels( false ) {
         setup_istream( m_particleChannelMap );
     }
 
     realflow_rpc_particle_istream( const frantic::tstring& file,
                                    const frantic::channels::channel_map& particleChannelMap )
-        : m_filename( file )
+        : m_particleRead( false )
         , m_fin( frantic::files::tfopen( file.c_str(), _T("rb") ) )
-        , m_particleIndex( -1 )
-        , m_particleRead( false )
-        , m_particleChunkStart( 0 )
+        , m_filename( file )
         , m_particleLocationInChunk( 0 )
+        , m_particleChunkStart( 0 )
+        , m_particleIndex( -1 )
         , m_convertTextureChannels( false ) {
         setup_istream( particleChannelMap );
     }
@@ -363,7 +364,7 @@ class realflow_rpc_particle_istream : public particle_istream {
 
         // Read file signature and check its actually .rpc
         boost::int32_t sig = 0;
-        std::fread( &sig, sizeof( sig ), 1, m_fin );
+        [[maybe_unused]] auto res = std::fread( &sig, sizeof( sig ), 1, m_fin );
         if( sig != RPC_FILE_SIGNATURE ) {
             throw invalid_particle_file_exception()
                 << "realflow_rpc_particle_istream.initialize_stream: File \""
@@ -629,7 +630,7 @@ class realflow_rpc_particle_istream : public particle_istream {
                 "realflow_rpc_particle_istream.copy__texture_coord_channel: Failed to copy texture "
                 "coordinates from file to particle stream because " +
                 ( "texture coordinate data type was type " +
-                  boost::lexical_cast<std::string>( m_textureChannel->get_channel_type() ) ) +
+                  boost::lexical_cast<std::string>( static_cast<int>( m_textureChannel->get_channel_type() ) ) ) +
                 " instead of float." );
         }
 

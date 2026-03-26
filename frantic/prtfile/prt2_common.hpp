@@ -69,7 +69,7 @@ namespace serialize {
  */
 template <typename T>
 inline T read_value( const char*& begin, const char* end, const frantic::tstring& streamName ) {
-    if( sizeof( T ) <= end - begin ) {
+    if( static_cast<long>( sizeof( T ) ) <= end - begin ) {
         T result;
         memcpy( &result, begin, sizeof( T ) );
         begin += sizeof( T );

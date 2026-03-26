@@ -294,7 +294,7 @@ void dpx_file_io::fill_default() {
     clean();
 
     // Verify the image format header
-    if( ( m_fileInformation.magic_num != 0x53445058 ) || ( m_fileInformation.magic_num != 0x58504453 ) )
+    if( m_fileInformation.magic_num != 0x53445058 && m_fileInformation.magic_num != 0x58504453 )
         m_fileInformation.magic_num = 0x53445058;
 
     memcpy( m_fileInformation.vers, "V1.0", 5 );

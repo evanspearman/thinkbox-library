@@ -1,11 +1,14 @@
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+#include "frantic/files/files.hpp"
+#include "frantic/graphics/units.hpp"
 #include <fstream>
 
 #include <frantic/channels/channel_map_adaptor.hpp>
 #include <frantic/files/paths.hpp>
 #include <frantic/particles/streams/particle_ostream.hpp>
+#include <frantic/logging/logging_level.hpp>
 
 namespace frantic {
 namespace particles {
@@ -16,7 +19,7 @@ class realflow_bin_particle_ostream : public particle_ostream {
     frantic::tstring m_file;
     std::ofstream m_fout;
     channel_map m_pcmIn, m_pcmOut;
-    channel_map_adaptor m_pcmAdaptor;
+    channels::channel_map_adaptor m_pcmAdaptor;
     std::vector<char> m_outBuffer;
     boost::int64_t m_index, m_expectedParticleCount;
     frantic::graphics::coordinate_system::option m_coordinateSystem;
@@ -123,10 +126,10 @@ class realflow_bin_particle_ostream : public particle_ostream {
                                        frantic::graphics::coordinate_system::right_handed_zup )
         : m_file( file )
         , m_fout( ( file + _T(".tmp") ).c_str(), std::ios::out | std::ios::binary )
-        , m_expectedParticleCount( expectedParticleCount )
         , m_index( 0 )
-        , m_countOffset( 0 )
-        , m_coordinateSystem( coordinateSystem ) {
+        , m_expectedParticleCount( expectedParticleCount )
+        , m_coordinateSystem( coordinateSystem )
+        , m_countOffset( 0 ) {
         if( !m_fout )
             throw std::runtime_error( "realflow_bin_particle_ostream: Unable to open file: " +
                                       frantic::strings::to_string( file ) + " for output." );

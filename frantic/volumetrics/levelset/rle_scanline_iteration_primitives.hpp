@@ -52,10 +52,10 @@ class rle_scanline_defined_iteration_primitive {
     /**
      * Copy constructor.
      */
-    rle_scanline_defined_iteration_primitive( const rle_scanline_defined_iteration_primitive& rhs )
-        : m_rd( rhs.m_rd )
-        , m_rdEnd( rhs.m_rdEnd )
-        , m_xEnd( rhs.m_xEnd ) {}
+    rle_scanline_defined_iteration_primitive( const rle_scanline_defined_iteration_primitive& rhs ) = default;
+    rle_scanline_defined_iteration_primitive&
+    operator=( const rle_scanline_defined_iteration_primitive& ) = default;
+
 
     /**
      * Initializes the iteration primitive to the range of run_data values provided.  Note that if the function returns

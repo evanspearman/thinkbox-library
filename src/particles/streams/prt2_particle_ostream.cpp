@@ -4,7 +4,9 @@
 #include "stdafx.h"
 // clang-format on
 
+#include <exception>
 #include <frantic/particles/streams/prt2_particle_ostream.hpp>
+#include <oneapi/tbb/parallel_pipeline.h>
 
 using namespace std;
 using namespace frantic;
@@ -15,11 +17,7 @@ using frantic::prtfile::prt2_writer;
 namespace {
 
 bool try_pop( tbb::concurrent_queue<vector<char>>& q, std::vector<char>& buffer ) {
-#if TBB_INTERFACE_VERSION_MAJOR >= 4
     return q.try_pop( buffer );
-#else
-    return q.pop_if_present( buffer );
-#endif
 }
 
 } // anonymous namespace
@@ -29,19 +27,18 @@ namespace detail {
  * A particle chunk generator which reads from a concurrent queue and creates particle chunks from it. This is
  * needed to translate the push interface of the ostream into the pull interface of the prt2_writer.
  */
-class queued_chunk_generator : public tbb::filter, boost::noncopyable {
+class queued_chunk_generator {
     typedef prt2_writer::particle_chunk chunk_type;
 
     std::size_t m_structureSize;
-    tbb::concurrent_queue<vector<char>>& m_particleChunkQueue;
-    volatile bool& m_closeRequested;
-    bool m_sentTerminationChunk;
+    oneapi::tbb::concurrent_queue<vector<char>>& m_particleChunkQueue;
+    std::atomic<bool>& m_closeRequested;
+    mutable bool m_sentTerminationChunk;
 
   public:
-    queued_chunk_generator( std::size_t structureSize, tbb::concurrent_queue<vector<char>>& particleChunkQueue,
-                            volatile bool& closeRequested )
-        : tbb::filter( true )
-        , m_structureSize( structureSize )
+    queued_chunk_generator( std::size_t structureSize, oneapi::tbb::concurrent_queue<vector<char>>& particleChunkQueue,
+                            std::atomic<bool>& closeRequested )
+        : m_structureSize( structureSize )
         , m_particleChunkQueue( particleChunkQueue )
         , m_closeRequested( closeRequested )
         , m_sentTerminationChunk( false ) {}
@@ -49,19 +46,19 @@ class queued_chunk_generator : public tbb::filter, boost::noncopyable {
     /**
      * Pop the particle chunk queue and return the result. Waits for a chunk in the queue if none is available.
      */
-    void* operator()( void* ) {
+    chunk_type* operator()( oneapi::tbb::flow_control& fc ) const {
         std::vector<char> chunkBuffer;
 
         // If a chunk can be retrieved, pass it along.
         if( try_pop( m_particleChunkQueue, chunkBuffer ) ) {
             chunk_type* chunk = new chunk_type();
             chunk->particleCount = chunkBuffer.size() / m_structureSize;
-            chunk->uncompressed = chunkBuffer;
+            chunk->uncompressed = std::move( chunkBuffer );
             return chunk;
         }
 
         // If no close has been requested, send an ignore chunk. Otherwise, return NULL to terminate the generator.
-        if( !m_closeRequested ) {
+        if( !m_closeRequested.load() ) {
             return &prt2_writer::IGNORE_CHUNK;
         }
 
@@ -70,106 +67,13 @@ class queued_chunk_generator : public tbb::filter, boost::noncopyable {
             m_sentTerminationChunk = true;
             return &prt2_writer::TERMINATION_CHUNK;
         }
-        return NULL;
+        fc.stop();
+        return nullptr;
     }
 };
 
-/**
- * A task that is spawned so that the pipelined prt2 writing can happen in parallel with the ostream.
- */
-class queued_write_task : public tbb::task {
-    boost::shared_ptr<prt2_particle_ostream::modal_pipeline> m_chunkPipeline;
-    boost::shared_ptr<prt2_writer::chunk_writer> m_chunkWriter;
-    prt2_writer& m_prt2;
-
-  public:
-    queued_write_task( boost::shared_ptr<prt2_particle_ostream::modal_pipeline> chunkPipeline,
-                       boost::shared_ptr<prt2_writer::chunk_writer> chunkWriter, frantic::prtfile::prt2_writer& prt2 )
-        : m_chunkPipeline( chunkPipeline )
-        , m_chunkWriter( chunkWriter )
-        , m_prt2( prt2 ) {}
-
-    tbb::task* execute() {
-        m_prt2.write_particle_chunks( m_chunkPipeline, m_chunkWriter );
-        return NULL;
-    }
-};
 } // namespace detail
 
-/**
- * prt2_particle_ostream::modal_pipeline
- */
-void prt2_particle_ostream::modal_pipeline::add_filter( tbb::filter& filter ) {
-    m_filters.push_back( &filter );
-    m_autoPipeline.add_filter( filter );
-}
-
-void prt2_particle_ostream::modal_pipeline::clear() {
-    m_data = this;
-    m_filters.clear();
-    m_autoPipeline.clear();
-}
-
-void prt2_particle_ostream::modal_pipeline::run( size_t maxLiveTokens ) {
-    // If we have finished or are already running, just return.
-    if( m_data == NULL || is_running() ) {
-        return;
-    }
-
-    if( m_filters.empty() ) {
-        throw std::runtime_error( "modal_pipeline::run() should not be called if empty!" );
-    }
-
-    // Atomically switch the state to automatic running from stopped. If we fail to switch, just return.
-    State oldState = static_cast<State>( m_state.compare_and_swap( AutomaticRunning, Stopped ) );
-    if( oldState != Stopped ) {
-        return;
-    }
-
-    m_autoPipeline.run( maxLiveTokens );
-    m_data = NULL;
-    m_state = Complete;
-}
-
-bool prt2_particle_ostream::modal_pipeline::step() {
-    if( m_state == AutomaticRunning ) {
-        throw std::runtime_error( "modal_pipeline::step() should not be called when automatic running!" );
-    }
-
-    // Stepping after completion just does nothing.
-    if( !m_data ) {
-        return false;
-    }
-
-    // Stepping before starting will block.
-    while( m_state == Stopped ) {
-        tbb::this_tbb_thread::yield();
-    }
-
-    for( std::vector<tbb::filter*>::iterator i = m_filters.begin(), end = m_filters.end(); i != end; ++i ) {
-        tbb::filter& filter = **i;
-        m_data = filter( m_data );
-
-        if( m_data == NULL ) {
-            m_state = Complete;
-            return false;
-        }
-    }
-    return true;
-}
-
-void prt2_particle_ostream::modal_pipeline::manual_run_non_blocking() {
-    // If we have finished or are already running, just return.
-    if( m_data == NULL || is_running() ) {
-        return;
-    }
-
-    if( m_filters.empty() ) {
-        throw std::runtime_error( "modal_pipeline::manual_run_non_blocking() should not be called if empty!" );
-    }
-
-    m_state.compare_and_swap( ManualRunning, Stopped );
-}
 
 /**
  * prt2_particle_ostream
@@ -177,12 +81,11 @@ void prt2_particle_ostream::modal_pipeline::manual_run_non_blocking() {
 prt2_particle_ostream::prt2_particle_ostream(
     const frantic::tstring& file, const frantic::channels::channel_map& particleChannelMap,
     const frantic::channels::channel_map& particleChannelMapForFile,
-    frantic::prtfile::prt2_compression_t compressionScheme, bool useTempFile, const boost::filesystem::path& tempDir,
+    frantic::prtfile::prt2_compression_t compressionScheme, bool useTempFile, const std::filesystem::path& tempDir,
     const frantic::channels::property_map* globalMetadata,
     const std::map<frantic::tstring, frantic::channels::property_map>* channelMetadata,
     intptr_t desiredChunkSizeInBytes )
-    : m_closeRequested( false )
-    , m_chunkPipeline( new modal_pipeline() ) {
+    : m_closeRequested( false ) {
     // Open the output file, this writes the header and the initial 'Chan' chunk,
     // and initializes the file-layout channel_map inside of m_prt2
     m_prt2.open( file, particleChannelMapForFile, useTempFile, tempDir );
@@ -205,41 +108,28 @@ prt2_particle_ostream::prt2_particle_ostream(
     m_particleChunkBuffer.reserve( desiredChunkSizeInBytes );
     m_desiredChunkSizeInBytes = desiredChunkSizeInBytes;
 
-    // Initialize the pipeline with its filters immediately, as we can't rely on the asynchronous task to do it if we
-    // want to be able to switch to manual mode on the pipeline.
-    boost::shared_ptr<::detail::queued_chunk_generator> chunkGenerator( new ::detail::queued_chunk_generator(
-        m_prt2.get_channel_map().structure_size(), m_particleChunkQueue, m_closeRequested ) );
-    m_chunkPipelineFilters.push_back( chunkGenerator );
-
-    boost::shared_ptr<frantic::prtfile::prt2_writer::chunk_writer> chunkWriter;
-
-    m_prt2.get_filters( 0, m_nullProgress, _T(""), false, compressionScheme, m_chunkPipelineFilters, chunkWriter );
-    m_chunkPipelineFilters.push_back( chunkWriter );
-
-    for( std::vector<boost::shared_ptr<tbb::filter>>::iterator i = m_chunkPipelineFilters.begin(),
-                                                               end = m_chunkPipelineFilters.end();
-         i != end; ++i ) {
-        m_chunkPipeline->add_filter( **i );
-    }
-
-    // Initialize the dummy task which will hold the queued_write_task so it can run and we can wait for it.
-    m_dummyTask = new( tbb::task::allocate_root() ) tbb::empty_task();
-    m_dummyTask->set_ref_count( 2 );
-
-    ::detail::queued_write_task& queuedWriteTask =
-        *new( m_dummyTask->allocate_child() )::detail::queued_write_task( m_chunkPipeline, chunkWriter, m_prt2 );
-    m_dummyTask->spawn( queuedWriteTask );
-
-    // Sleep for a short period of time, and then make the modal_pipeline manual if it hasn't run.
-    // 0.01 is a bit of a magic number. 0.001 is short enough that this consistently goes to manual mode, but 0.01 seems
-    // to work well enough.
-    tbb::this_tbb_thread::yield();
-    tbb::this_tbb_thread::sleep( tbb::tick_count::interval_t( 0.01 ) );
-
-    m_chunkPipeline->manual_run_non_blocking();
+    m_writerThread = std::thread( [this, compressionScheme]() {
+          try {
+              ::detail::queued_chunk_generator chunkGenerator(
+                  m_prt2.get_channel_map().structure_size(),
+                  m_particleChunkQueue,
+                  m_closeRequested
+              );
+              m_prt2.write_particle_chunks(
+                  chunkGenerator,
+                  0,
+                  m_nullProgress,
+                  _T(""),
+                  false,
+                  compressionScheme
+              );
+          } catch (...) {
+              m_writerException = std::current_exception();
+          }
+      });
 }
 
-prt2_particle_ostream::~prt2_particle_ostream() { close(); }
+prt2_particle_ostream::~prt2_particle_ostream() noexcept { close(); }
 
 void prt2_particle_ostream::close() {
     if( !m_closeRequested ) {
@@ -250,16 +140,13 @@ void prt2_particle_ostream::close() {
         }
         m_closeRequested = true;
 
-        // If in manual mode, step until we can't step any more.
-        if( m_chunkPipeline->is_manually_running() ) {
-            while( m_chunkPipeline->step() ) {
-            }
+        if(m_writerThread.joinable()) {
+            m_writerThread.join();
         }
 
-        // Wait until our child tasks are done.
-        m_dummyTask->wait_for_all();
-        m_dummyTask->destroy( *m_dummyTask );
-        m_dummyTask = NULL;
+        if( m_writerException ) {
+            std::rethrow_exception(m_writerException);
+        }
 
         // Write the bounding box if we were accumulating it
         if( m_posAccessor.is_valid() ) {
@@ -276,7 +163,7 @@ void prt2_particle_ostream::close() {
     }
 }
 
-const boost::filesystem::path& prt2_particle_ostream::get_target_file() const { return m_prt2.get_target_file(); }
+const std::filesystem::path& prt2_particle_ostream::get_target_file() const { return m_prt2.get_target_file(); }
 
 void prt2_particle_ostream::set_channel_map( const frantic::channels::channel_map& particleChannelMap ) {
     m_particleChannelMap = particleChannelMap;
@@ -307,13 +194,5 @@ void prt2_particle_ostream::put_particle( const char* rawParticleData ) {
     if( currentChunkSize > m_desiredChunkSizeInBytes ) {
         m_particleChunkQueue.push( m_particleChunkBuffer );
         m_particleChunkBuffer.clear();
-
-        // If we are in manual mode, step the pipeline for every chunk we add.
-        if( m_chunkPipeline->is_manually_running() ) {
-            if( !m_chunkPipeline->step() ) {
-                throw std::runtime_error(
-                    "prt2_particle_ostream::put_particle() - step() should never return false here." );
-            }
-        }
     }
 }

@@ -6,7 +6,6 @@
 // clang-format on
 
 #include <cfloat>
-#include <limits>
 
 #include <frantic/files/filename_sequence.hpp>
 
@@ -54,8 +53,6 @@ frame_set::frame_set( int startFrame, int endFrame ) {
     for( int i = start; i <= end; ++i )
         m_frames.insert( i );
 }
-
-frame_set::frame_set( const frame_set& rhs ) { m_frames = rhs.m_frames; }
 
 // set operations
 /**

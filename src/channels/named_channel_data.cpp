@@ -706,7 +706,7 @@ const frantic::tchar* channel_data_type_str( data_type_t type ) {
     default:
         throw std::runtime_error(
             "channel_data_type_str: Attempted to retrieve the string version of an invalid data type enum " +
-            boost::lexical_cast<std::string>( type ) );
+            boost::lexical_cast<std::string>( static_cast<int>( type ) ) );
     }
 }
 
@@ -1028,7 +1028,7 @@ channel_weighted_sum_combine_function_t channel_weighted_sum_combine_function( d
     default:
         throw std::runtime_error( "channel_barycentric_combine_function: Attempted to get a weighted sum combining "
                                   "function for an invalid data type enum " +
-                                  boost::lexical_cast<std::string>( type ) );
+                                  boost::lexical_cast<std::string>( static_cast<int>( type ) ) );
     }
 }
 
@@ -1230,7 +1230,7 @@ offset_input_channel_weighted_sum_combine_function( data_type_t type ) {
         throw std::runtime_error( "offset_input_channel_weighted_sum_combine_function: "
                                   "Attempted to get a weighted sum combining function for an "
                                   "invalid data type enum " +
-                                  boost::lexical_cast<std::string>( type ) );
+                                  boost::lexical_cast<std::string>( static_cast<int>( type ) ) );
     }
 }
 
@@ -1453,7 +1453,7 @@ channel_weighted_increment_function_t channel_weighted_increment_function( data_
     default:
         throw std::runtime_error( "channel_barycentric_combine_function: Attempted to get a weighted sum combining "
                                   "function for an invalid data type enum " +
-                                  boost::lexical_cast<std::string>( type ) );
+                                  boost::lexical_cast<std::string>( static_cast<int>( type ) ) );
     }
 }
 
@@ -1488,7 +1488,7 @@ channel_scale_function_t channel_scale_function( data_type_t type ) {
     default:
         throw std::runtime_error(
             "channel_scale_function: Attempted to get a channel scaling function for an invalid data type enum " +
-            boost::lexical_cast<std::string>( type ) );
+            boost::lexical_cast<std::string>( static_cast<int>( type ) ) );
     }
 }
 
@@ -1549,7 +1549,7 @@ channel_range_map_function_t channel_range_map_function( data_type_t type ) {
     default:
         throw std::runtime_error(
             "channel_scale_function: Attempted to get a channel scaling function for an invalid data type enum " +
-            boost::lexical_cast<std::string>( type ) );
+            boost::lexical_cast<std::string>( static_cast<int>( type ) ) );
     }
 }
 
@@ -1726,7 +1726,7 @@ channel_binary_function_t channel_minimum_function( data_type_t type ) {
         return detail::channel_op<double>::min;
     default:
         throw std::runtime_error( "There is no minimum function for that data type(" +
-                                  boost::lexical_cast<std::string>( type ) + ")." );
+                                  boost::lexical_cast<std::string>( static_cast<int>( type ) ) + ")." );
     }
 }
 

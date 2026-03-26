@@ -19,10 +19,7 @@
 // clang-format on
 #include <frantic/volumetrics/implicitsurface/marching_cubes_table.hpp>
 
-#pragma warning( push )
-#pragma warning( disable : 4512 )
 #include <boost/assign/std/vector.hpp>
-#pragma warning( pop )
 
 namespace frantic {
 namespace volumetrics {
@@ -610,16 +607,16 @@ bool marching_cubes_table::test_interior( char flag, char cubeCase, char config,
     case 13:
         switch( cubeCase ) {
         case 6:
-            edge = test6[config][2];
+            edge = test6[static_cast<std::size_t>(config)][2];
             break;
         case 7:
-            edge = test7[config][4];
+            edge = test7[static_cast<std::size_t>(config)][4];
             break;
         case 12:
-            edge = test12[config][3];
+            edge = test12[static_cast<std::size_t>(config)][3];
             break;
         case 13:
-            edge = triangles13_5_1[config][subconfig][0];
+            edge = triangles13_5_1[static_cast<std::size_t>(config)][static_cast<std::size_t>(subconfig)][0];
             break;
         }
         switch( edge ) {

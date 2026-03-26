@@ -158,7 +158,7 @@ and these came close:
  11  8 15 26 3 22 24
 -------------------------------------------------------------------------------
 */
-#define final( a, b, c )                                                                                               \
+#define fin( a, b, c )                                                                                               \
     {                                                                                                                  \
         c ^= b;                                                                                                        \
         c -= rot( b, 14 );                                                                                             \
@@ -189,7 +189,7 @@ and these came close:
  hashlittle() has to dance around fitting the key bytes into registers.
 --------------------------------------------------------------------
 */
-uint32_t hashword( const uint32_t* k, /* the key, an array of uint32_t values */
+inline uint32_t hashword( const uint32_t* k, /* the key, an array of uint32_t values */
                    size_t length,     /* the length of the key, in uint32_ts */
                    uint32_t initval ) /* the previous hash, or an arbitrary value */
 {
@@ -217,7 +217,7 @@ uint32_t hashword( const uint32_t* k, /* the key, an array of uint32_t values */
         b += k[1];
     case 1:
         a += k[0];
-        final( a, b, c );
+        fin( a, b, c );
     case 0: /* case 0: nothing left to add */
         break;
     }
@@ -233,7 +233,7 @@ both be initialized with seeds.  If you pass in (*pb)==0, the output
 (*pc) will be the same as the return value from hashword().
 --------------------------------------------------------------------
 */
-void hashword2( const uint32_t* k, /* the key, an array of uint32_t values */
+inline void hashword2( const uint32_t* k, /* the key, an array of uint32_t values */
                 size_t length,     /* the length of the key, in uint32_ts */
                 uint32_t* pc,      /* IN: seed OUT: primary hash value */
                 uint32_t* pb )     /* IN: more seed OUT: secondary hash value */
@@ -263,7 +263,7 @@ void hashword2( const uint32_t* k, /* the key, an array of uint32_t values */
         b += k[1];
     case 1:
         a += k[0];
-        final( a, b, c );
+        fin( a, b, c );
     case 0: /* case 0: nothing left to add */
         break;
     }
@@ -299,7 +299,7 @@ acceptable.  Do NOT use for cryptographic purposes.
 -------------------------------------------------------------------------------
 */
 
-uint32_t hashlittle( const void* key, size_t length, uint32_t initval ) {
+inline uint32_t hashlittle( const void* key, size_t length, uint32_t initval ) {
     uint32_t a, b, c; /* internal state */
     union {
         const void* ptr;
@@ -312,7 +312,6 @@ uint32_t hashlittle( const void* key, size_t length, uint32_t initval ) {
     u.ptr = key;
     if( HASH_LITTLE_ENDIAN && ( ( u.i & 0x3 ) == 0 ) ) {
         const uint32_t* k = (const uint32_t*)key; /* read 32-bit chunks */
-        const uint8_t* k8;
 
         /*------ all but last block: aligned reads and affect 32 bits of (a,b,c) */
         while( length > 12 ) {
@@ -543,7 +542,7 @@ uint32_t hashlittle( const void* key, size_t length, uint32_t initval ) {
         }
     }
 
-    final( a, b, c );
+    fin( a, b, c );
     return c;
 }
 
@@ -557,7 +556,7 @@ uint32_t hashlittle( const void* key, size_t length, uint32_t initval ) {
  * the key.  *pc is better mixed than *pb, so use *pc first.  If you want
  * a 64-bit value do something like "*pc + (((uint64_t)*pb)<<32)".
  */
-void hashlittle2( const void* key, /* the key to hash */
+inline void hashlittle2( const void* key, /* the key to hash */
                   size_t length,   /* length of the key */
                   uint32_t* pc,    /* IN: primary initval, OUT: primary hash */
                   uint32_t* pb )   /* IN: secondary initval, OUT: secondary hash */
@@ -575,7 +574,6 @@ void hashlittle2( const void* key, /* the key to hash */
     u.ptr = key;
     if( HASH_LITTLE_ENDIAN && ( ( u.i & 0x3 ) == 0 ) ) {
         const uint32_t* k = (const uint32_t*)key; /* read 32-bit chunks */
-        const uint8_t* k8;
 
         /*------ all but last block: aligned reads and affect 32 bits of (a,b,c) */
         while( length > 12 ) {
@@ -814,7 +812,7 @@ void hashlittle2( const void* key, /* the key to hash */
         }
     }
 
-    final( a, b, c );
+    fin( a, b, c );
     *pc = c;
     *pb = b;
 }
@@ -825,7 +823,7 @@ void hashlittle2( const void* key, /* the key to hash */
  * from hashlittle() on all machines.  hashbig() takes advantage of
  * big-endian byte ordering.
  */
-uint32_t hashbig( const void* key, size_t length, uint32_t initval ) {
+inline uint32_t hashbig( const void* key, size_t length, uint32_t initval ) {
     uint32_t a, b, c;
     union {
         const void* ptr;
@@ -838,7 +836,6 @@ uint32_t hashbig( const void* key, size_t length, uint32_t initval ) {
     u.ptr = key;
     if( HASH_BIG_ENDIAN && ( ( u.i & 0x3 ) == 0 ) ) {
         const uint32_t* k = (const uint32_t*)key; /* read 32-bit chunks */
-        const uint8_t* k8;
 
         /*------ all but last block: aligned reads and affect 32 bits of (a,b,c) */
         while( length > 12 ) {
@@ -1012,7 +1009,7 @@ uint32_t hashbig( const void* key, size_t length, uint32_t initval ) {
         }
     }
 
-    final( a, b, c );
+    fin( a, b, c );
     return c;
 }
 

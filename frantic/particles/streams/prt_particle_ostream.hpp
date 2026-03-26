@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 
+#include <boost/filesystem/exception.hpp>
 #include <frantic/particles/streams/particle_ostream.hpp>
 
 #include <frantic/channels/channel_map_adaptor.hpp>
@@ -247,8 +248,8 @@ class prt_particle_ostream : public particle_ostream {
                           const frantic::channels::property_map* generalMetadata = NULL,
                           const std::map<frantic::tstring, frantic::channels::property_map>* channelMetadata = NULL )
         : m_fout( NULL )
-        , m_expectedParticleCount( expectedParticleCount )
-        , m_tempDir( tempDir ) {
+        , m_tempDir( tempDir )
+        , m_expectedParticleCount( expectedParticleCount ) {
         if( m_tempDir.empty() )
             m_tempDir = boost::filesystem::temp_directory_path();
 
@@ -394,7 +395,7 @@ class prt_particle_ostream : public particle_ostream {
                     // want to fail if the file exists in the remote destination since we chosen an appropriately random
                     // name that its a problem if that file now exists.
                     boost::filesystem::copy_file( tempLocalFile, tempRemoteFile,
-                                                  boost::filesystem::copy_option::fail_if_exists, errcode );
+                                                  boost::filesystem::copy_options::none, errcode );
                     if( errcode )
                         BOOST_THROW_EXCEPTION( boost::filesystem::filesystem_error(
                             "PRT ostream fail to copy local temp file to remote location", tempLocalFile,

@@ -7,7 +7,6 @@
 
 #if !defined( _WIN32 )
 
-#include <fstream>
 #include <stdexcept>
 #include <vector>
 
@@ -132,9 +131,9 @@ void child_process::set_createNewConsole( bool value ) {
     m_createNewConsole = value;
 }
 
-void child_process::launch_as( const std::string& executable, const std::string& arguments,
-                               const std::string& startupdir, const std::string& username, const std::string& domain,
-                               const std::string& password ) {
+void child_process::launch_as( [[maybe_unused]] const std::string& executable, [[maybe_unused]] const std::string& arguments,
+                               [[maybe_unused]] const std::string& startupdir, [[maybe_unused]] const std::string& username, [[maybe_unused]] const std::string& domain,
+                               [[maybe_unused]] const std::string& password ) {
     perror( "child_process::launch_as: not supported in Unix envirmonment." );
 
     /*if( m_pid != 0 )
@@ -223,7 +222,7 @@ void child_process::launch_as( const std::string& executable, const std::string&
 }
 
 int child_process::launch( const std::string& executable, const std::string& arguments,
-                           const std::string& startupdir ) // = "./" )
+                           [[maybe_unused]] const std::string& startupdir ) // = "./" )
 {
     cout << "Entered launch." << endl;
     cout << "exe: " << executable << endl;
@@ -343,7 +342,7 @@ int child_process::launch( const std::string& executable, const std::string& arg
     return m_pid;
 }
 
-void child_process::terminate( int exitCode ) {
+void child_process::terminate( [[maybe_unused]] int exitCode ) {
     cout << "Terminating Child from Parent.\n" << endl;
     kill( m_pid, SIGKILL );
     // m_pid = 0;

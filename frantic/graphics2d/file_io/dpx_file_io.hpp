@@ -4,10 +4,8 @@
 #pragma once
 
 #include "boost/cstdint.hpp"
-#include <fstream>
 #include <iostream>
 #include "frantic/channels/channel_buffer.hpp"
-#include "frantic/math/utils.hpp"
 
 // Fwd decl to break the include cycle dpx_file_io.hpp -> framebuffer.hpp -> repeat.
 namespace frantic {

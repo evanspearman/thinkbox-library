@@ -6,10 +6,8 @@
 
 #include <frantic/particles/streams/age_culled_particle_istream.hpp>
 
-#pragma warning( push, 3 )
+#include <oneapi/tbb/task_arena.h>
 #include <tbb/parallel_reduce.h>
-#include <tbb/task_scheduler_init.h>
-#pragma warning( pop )
 
 namespace frantic {
 namespace particles {
@@ -23,8 +21,8 @@ particle_istream_ptr age_culled_particle_istream::apply_to_stream( particle_istr
 
 age_culled_particle_istream::age_culled_particle_istream( particle_istream_ptr pDelegate, float minAge )
     : delegated_particle_istream( pDelegate )
-    , m_minAge( minAge )
-    , m_particleIndex( -1 ) {
+    , m_particleIndex( -1 )
+    , m_minAge( minAge ) {
     this->set_channel_map_impl( pDelegate->get_channel_map() );
 }
 
@@ -95,7 +93,7 @@ class age_culled_particle_istream::culling_body {
     culling_body( age_culled_particle_istream& owner, char* pBuffer )
         : m_pOwner( &owner )
         , m_pBuffer( pBuffer ) {
-        m_resultRanges.reserve( 2 * tbb::task_scheduler_init::default_num_threads() );
+        m_resultRanges.reserve( 2 * oneapi::tbb::this_task_arena::max_concurrency() );
     }
 
     culling_body( culling_body& lhs, tbb::split )

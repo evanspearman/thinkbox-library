@@ -64,8 +64,8 @@ prt2_particle_istream::prt2_particle_istream( const frantic::tstring& file,
 
 prt2_particle_istream::prt2_particle_istream( const frantic::tstring& file, const chunk_list_t& chunks,
                                               frantic::channels::data_type_t positionTypeHint )
-    : m_chunksList( chunks )
-    , m_prt2( new prt2_reader() ) {
+    : m_prt2( new prt2_reader() )
+    , m_chunksList( chunks ) {
     m_prt2->open( file );
 
     set_channel_map_with_position_type( m_prt2->get_channel_map(), positionTypeHint );
@@ -76,8 +76,8 @@ prt2_particle_istream::prt2_particle_istream( const frantic::tstring& file, cons
 prt2_particle_istream::prt2_particle_istream( const frantic::tstring& file,
                                               const frantic::channels::channel_map& particleChannelMap,
                                               const chunk_list_t& chunks )
-    : m_chunksList( chunks )
-    , m_prt2( new prt2_reader() ) {
+    : m_prt2( new prt2_reader() )
+    , m_chunksList( chunks ) {
     m_prt2->open( file );
 
     set_channel_map( particleChannelMap );
@@ -131,8 +131,8 @@ prt2_particle_istream::prt2_particle_istream( const boost::shared_ptr<frantic::p
 prt2_particle_istream::prt2_particle_istream( const boost::shared_ptr<frantic::prtfile::prt2_reader>& file,
                                               const chunk_list_t& chunks,
                                               frantic::channels::data_type_t positionTypeHint )
-    : m_chunksList( chunks )
-    , m_prt2( file ) {
+    : m_prt2( file )
+    , m_chunksList( chunks ) {
     set_channel_map_with_position_type( m_prt2->get_channel_map(), positionTypeHint );
 
     init();

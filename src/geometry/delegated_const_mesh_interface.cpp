@@ -223,7 +223,7 @@ void delegated_const_mesh_interface::append_delegate_channel( const frantic::geo
         append_face_channel( std::move( myChannel ) );
     } else {
         throw std::runtime_error( "delegated_const_mesh_interface::add_delegate_channel() Unknown channel type: " +
-                                  boost::lexical_cast<std::string>( channelType ) );
+                                  boost::lexical_cast<std::string>( static_cast<int>( channelType ) ) );
     }
 }
 
@@ -258,7 +258,7 @@ void delegated_const_mesh_interface::append_delegate_channels(
             } else {
                 throw std::runtime_error( "create_vertex_normal_channel_mesh_interface_impl::add_delegate_channels "
                                           "Error: Unknown channel type: " +
-                                          boost::lexical_cast<std::string>( channelType ) );
+                                          boost::lexical_cast<std::string>( static_cast<int>( channelType ) ) );
             }
         }
     }

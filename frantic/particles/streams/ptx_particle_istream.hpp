@@ -373,12 +373,12 @@ class ptx_particle_istream : public particle_istream {
     ptx_particle_istream( const frantic::tstring& filename, bool applyTransform = true,
                           channels::data_type_t positionTypeHint = channels::data_type_invalid )
         : m_name( filename )
+        , m_finReopened( false )
+        , m_expectedParticleColumnCount( 0 )
         , m_currentParticleIndex( -1 )
         , m_blockParticleIndex( -1 )
         , m_blockParticleCount( -1 )
-        , m_finReopened( false )
-        , m_applyTransform( applyTransform )
-        , m_expectedParticleColumnCount( 0 ) {
+        , m_applyTransform( applyTransform ) {
         initialize_metadata();
         initialize_stream( m_name, positionTypeHint );
         set_channel_map( m_nativeParticleChannelMap );

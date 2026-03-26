@@ -2393,9 +2393,6 @@ class rle_scanline_level_set_advect_rk3_weno3 {
 
     float m_dt;
 
-    rle_scanline_level_set_advect_rk3_weno3&
-    operator=( const rle_scanline_level_set_advect_rk3_weno3& ); // not implemented
-
   public:
     rle_scanline_level_set_advect_rk3_weno3( const boundbox3& bounds, const size3& boxSize,
                                              const rle_index_spec& velRIS, const rle_index_spec& srcRIS,

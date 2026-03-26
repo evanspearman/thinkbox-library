@@ -126,6 +126,9 @@ class frame_set {
     frame_set( const std::vector<double>& frames );
     frame_set( const std::vector<int>& wholeframes );
     frame_set( int startFrame, int endFrame );
+    frame_set( const frame_set& rhs ) = default;
+
+    frame_set& operator=( const frame_set& ) = default;
 
     // set operations
     int add_frame( int wholeframe );

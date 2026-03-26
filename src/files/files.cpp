@@ -8,6 +8,7 @@
 #include "stdafx.h"
 // clang-format on
 #include <frantic/files/files.hpp>
+#include <boost/filesystem/directory.hpp>
 
 #ifndef _WIN32
 typedef unsigned char BYTE;

@@ -128,7 +128,7 @@ class ptg_particle_istream : public particle_istream {
             throw std::runtime_error( "ptg_particle_istream:: Invalid string length in file \"" +
                                       frantic::strings::to_string( m_filename ) + "\"." );
         std::vector<char> keyBuff( stringSize );
-        fgets( &keyBuff[0], stringSize, in );
+        [[maybe_unused]] auto res = fgets( &keyBuff[0], stringSize, in );
         return std::string( &keyBuff[0] );
     }
 

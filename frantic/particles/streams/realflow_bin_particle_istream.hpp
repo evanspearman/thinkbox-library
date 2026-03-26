@@ -10,8 +10,6 @@
 #include <frantic/particles/prt_metadata.hpp>
 #include <frantic/particles/streams/particle_istream.hpp>
 
-#include <map>
-
 namespace frantic {
 namespace particles {
 namespace streams {
@@ -102,7 +100,7 @@ class realflow_bin_particle_istream : public particle_istream {
 
         // First check the signature to verify this is actually a .bin file
         boost::int32_t sig = 0;
-        std::fread( &sig, sizeof( sig ), 1, m_fin );
+        [[maybe_unused]] auto res = std::fread( &sig, sizeof( sig ), 1, m_fin );
         if( sig != BIN_MAGIC_SIGNATURE )
             throw invalid_particle_file_exception()
                 << "realflow_bin_particle_istream: File \"" << frantic::strings::to_string( m_filename )

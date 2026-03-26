@@ -496,7 +496,7 @@ void rle_index_spec::build_from_random( const boundbox3& testBounds, float expec
         for( int y = ob.yminimum(); y <= ob.ymaximum(); ++y ) {
             for( int x = ob.xminimum(); x <= ob.xmaximum(); ++x ) {
                 // switch the isDefined flag with a specified probability
-                float chooser = (float)rand() / RAND_MAX;
+                float chooser = static_cast<float>( rand() ) / static_cast<float>( RAND_MAX );
                 if( chooser < runChangeProbability )
                     isDefined = !isDefined;
                 if( isDefined )

@@ -21,7 +21,6 @@ using frantic::graphics::boundbox3;
 using frantic::graphics::vector3;
 using frantic::graphics::vector3f;
 using frantic::math::square;
-using frantic::volumetrics::levelset::trilerp_float;
 
 namespace frantic {
 namespace volumetrics {
@@ -830,7 +829,7 @@ class trilerp_cache {
         // If a voxel's populatedChannel == 2, then set its dataIndex
         // to -1 so that its value will be ignored.
         if( m_populatedChannel ) {
-            for( int i = 0; i < m_indexCount; ++i ) {
+            for( std::size_t i = 0; i < m_indexCount; ++i ) {
                 const boost::int32_t dataIndex = dataIndices[i];
                 if( dataIndex >= 0 ) {
                     if( m_populatedChannel[dataIndex] == 2 ) {
@@ -842,7 +841,7 @@ class trilerp_cache {
 
         int definedCount = 0;
         boost::uint8_t phiPop[m_indexCount];
-        for( int i = 0; i < m_indexCount; ++i ) {
+        for( std::size_t i = 0; i < m_indexCount; ++i ) {
             const boost::int32_t dataIndex = dataIndices[i];
             if( dataIndex >= 0 ) {
                 m_phiBox[i] = m_signedDistance[dataIndex];
@@ -881,7 +880,7 @@ class trilerp_cache {
             // defined voxels.
             vector3 gradPop[m_indexCount];
 
-            for( int i = 0; i < m_indexCount; ++i ) {
+            for( std::size_t i = 0; i < m_indexCount; ++i ) {
                 gradPop[i].set( 0 );
             }
 
@@ -935,12 +934,12 @@ class trilerp_cache {
      *		case all voxels will be used.
      */
     trilerp_cache( const rle_index_spec* ris, const float* signedDistance, const boost::uint8_t* populatedChannel = 0 )
-        : m_ris( ris )
-        , m_signedDistance( signedDistance )
-        , m_populatedChannel( populatedChannel )
-        , m_isPopulated( false )
+        : m_voxelCoordinate( std::numeric_limits<float>::max() )
         , m_minimumCoord( std::numeric_limits<boost::int32_t>::max() )
-        , m_voxelCoordinate( std::numeric_limits<float>::max() ) {}
+        , m_isPopulated( false )
+        , m_ris( ris )
+        , m_signedDistance( signedDistance )
+        , m_populatedChannel( populatedChannel ) {}
 
     /**
      *  Estimate the signed distance at the specified voxel

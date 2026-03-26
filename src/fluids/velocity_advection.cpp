@@ -21,7 +21,6 @@
 #include <tbb/blocked_range.h>
 #include <tbb/blocked_range2d.h>
 #include <tbb/parallel_for.h>
-#include <tbb/task_scheduler_init.h>
 
 namespace frantic {
 namespace fluids {
@@ -113,8 +112,6 @@ class rle_scanline_lookup_advect {
     rle_channel_accessor<vector3f>& m_resultVelAcc;
 
     float m_dt;
-
-    rle_scanline_lookup_advect& operator=( const rle_scanline_lookup_advect& ); // not implemented
 
   public:
     rle_scanline_lookup_advect( const boundbox3& bounds, const rle_index_spec& velRIS, const rle_index_spec& srcRIS,
@@ -210,8 +207,6 @@ class rle_scanline_window_advect {
     rle_channel_accessor<vector3f>& m_resultVelAcc;
 
     float m_dt;
-
-    rle_scanline_window_advect& operator=( const rle_scanline_window_advect& ); // not implemented
 
   public:
     rle_scanline_window_advect( const boundbox3& bounds, const size3& boxSize, const rle_index_spec& velRIS,
@@ -377,7 +372,6 @@ void velocity_advect( const rle_voxel_field& source, rle_voxel_field& result, co
     //
     // This same change should be made in velocity lookup part of
     // level set advection.
-    tbb::task_scheduler_init taskScheduleInit;
 
     const frantic::volumetrics::voxel_coord_system& srcVcs = source.get_voxel_coord_system();
     const rle_index_spec& srcRleIndex = source.get_rle_index_spec();
@@ -488,8 +482,6 @@ void serial_velocity_advect( const rle_voxel_field& source, rle_voxel_field& res
 
     // std::vector<int> dataIndices(bounds.get_volume()) ;
     // const boost::int32_t const* dataIndices;
-
-    int count = 0;
 
     const std::vector<run_data>& runIndexData = ris.get_run_index_data_vector();
 
@@ -641,7 +633,6 @@ void serial_velocity_advect( const rle_voxel_field& source, rle_voxel_field& res
                             throw std::runtime_error( "serial_velocity_advect() Error: NaN Velocity found!" );
                         }
 
-                        ++count;
                     }
 
                     // logging::error << "At Index: " << cellIndex << " new vel: " << 	newVelocity << endl;
@@ -717,7 +708,6 @@ void serial_velocity_weno_advect( rle_voxel_field& source, rle_voxel_field& resu
     const vector<boost::int32_t>& bcToRunIndex = ris.get_bc_to_run_index_vector();
 
     int ysize = bounds.ysize();
-    int count = 0;
 
     const std::vector<run_data>& runIndexData = ris.get_run_index_data_vector();
 
@@ -860,8 +850,6 @@ void serial_velocity_weno_advect( rle_voxel_field& source, rle_voxel_field& resu
                             logging::error << "Voxel Coord=" << srcVcs.get_voxel_coord( finalPosition ) << endl;
                             throw std::runtime_error( "serial_velocity_weno_advect Error: NaN Velocity found!" );
                         }
-
-                        ++count;
                     }
 
                     // logging::error << "At Index: " << cellIndex << " new vel: " << 	newVelocity << endl;
@@ -905,8 +893,6 @@ class rle_scanline_weno3_advect {
     const_rle_channel_accessor<float>&m_srcIndicatorX1Acc, &m_srcIndicatorX2Acc;
 
     float m_dt;
-
-    rle_scanline_weno3_advect& operator=( const rle_scanline_weno3_advect& ); // not implemented
 
   public:
     rle_scanline_weno3_advect(
@@ -1074,7 +1060,6 @@ class rle_scanline_weno3_advect {
 
 void velocity_weno_advect( rle_voxel_field& source, rle_voxel_field& result, rle_voxel_field& velocityField,
                            float maxVoxelMotion, float dt ) {
-    tbb::task_scheduler_init taskSchedulerInit;
     typedef rle_scanline_weno3_advect advector_t;
 
     create_staggered_smoothness_indicator_x_channel( velocityField, _T("StaggeredVelocity"), _T("WenoIndicatorOne"),
@@ -1442,9 +1427,6 @@ class rle_scanline_velocity_correct_and_clamp {
     rle_channel_accessor<vector3f>& m_outVel;
     const vector3f* m_advectedVelChannel;
 
-    rle_scanline_velocity_correct_and_clamp&
-    operator=( const rle_scanline_velocity_correct_and_clamp& ); // not implemented
-
   public:
     rle_scanline_velocity_correct_and_clamp( const rle_index_spec& ris,
                                              const const_rle_channel_accessor<vector3f>& resultVel,
@@ -1598,8 +1580,6 @@ void velocity_correct_and_clamp( const rle_index_spec& ris, const const_rle_chan
                                  const const_rle_channel_accessor<vector3f>& origVel,
                                  const const_rle_channel_accessor<vector3f>& errorEstimateVel,
                                  rle_channel_accessor<vector3f>& outVel, const vector3f* advectedVelChannel = 0 ) {
-    tbb::task_scheduler_init taskScheduleInit;
-
     const boundbox3 bounds = ris.outer_bounds();
     const vector3& boundsMin = bounds.minimum();
     const vector3& boundsMax = bounds.maximum();
@@ -1654,8 +1634,6 @@ class rle_scanline_lookup_advect_and_revert {
     rle_channel_accessor<vector3f>& m_resultAcc;
 
     float m_dt;
-
-    rle_scanline_lookup_advect_and_revert& operator=( const rle_scanline_lookup_advect_and_revert& ); // not implemented
 
   public:
     rle_scanline_lookup_advect_and_revert( const boundbox3& bounds, const rle_index_spec& ris,
@@ -1748,8 +1726,6 @@ void velocity_advect_and_revert_extrema( const rle_voxel_field& source, const rl
     //
     // This same change should be made in velocity lookup part of
     // level set advection.
-    tbb::task_scheduler_init taskScheduleInit;
-
     const frantic::volumetrics::voxel_coord_system& vcs = source.get_voxel_coord_system();
     const rle_index_spec& ris = source.get_rle_index_spec();
     const rle_index_spec& revertRIS = revert.get_rle_index_spec();

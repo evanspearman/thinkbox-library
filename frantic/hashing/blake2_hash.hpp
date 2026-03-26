@@ -2,10 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 
-#pragma warning( push )
-#pragma warning( disable : 4804 )
-#include <libb2/blake2.h>
-#pragma warning( pop )
+#include <blake2.h>
 
 namespace frantic {
 namespace hashing {

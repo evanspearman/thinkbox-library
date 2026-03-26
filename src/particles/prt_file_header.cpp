@@ -7,7 +7,6 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <fstream>
 #include <sstream>
 
 #include <errno.h>
@@ -34,9 +33,9 @@
 // enable their behavior.
 #include <boost/assert.hpp>
 
-#ifdef POPPED_NDEBUG
-#define NDEBUG
-#endif
+// #ifdef POPPED_NDEBUG
+// #define NDEBUG
+// #endif
 
 using namespace frantic::channels;
 
@@ -142,7 +141,7 @@ prt_channel_type data_type_to_prt_channel_type( data_type_t dt ) {
         return prt_ct_float64;
     default:
         throw std::runtime_error( "data_type_to_prt_channel_type: Unknown data type: " +
-                                  boost::lexical_cast<std::string>( dt ) );
+                                  boost::lexical_cast<std::string>( static_cast<int>( dt ) ) );
     }
 }
 
@@ -195,7 +194,7 @@ boost::int32_t stop_chunk_type() {
     return *reinterpret_cast<const boost::int32_t*>( type );
 }
 
-std::string generate_error_msg( const std::string& context, const frantic::tstring& streamName ) {
+[[maybe_unused]] std::string generate_error_msg( const std::string& context, const frantic::tstring& streamName ) {
     std::stringstream ss;
     ss << context << " Failure to write header for file \"" << frantic::strings::to_string( streamName ) << "\"\n";
     ss << "\tError number: " << errno << "\n";
@@ -207,7 +206,7 @@ std::string generate_error_msg( const std::string& context, const frantic::tstri
     return ss.str();
 }
 
-int fseek64( FILE* stream, boost::int64_t offset, int origin ) {
+[[maybe_unused]] int fseek64( FILE* stream, boost::int64_t offset, int origin ) {
 #ifdef _WIN32
     return _fseeki64( stream, offset, origin );
 #elif defined( __APPLE__ )
@@ -217,7 +216,7 @@ int fseek64( FILE* stream, boost::int64_t offset, int origin ) {
 #endif
 }
 
-boost::int64_t ftell64( FILE* stream ) {
+[[maybe_unused]] boost::int64_t ftell64( FILE* stream ) {
 #ifdef _WIN32
     return _ftelli64( stream );
 #elif defined( __APPLE__ )
@@ -271,7 +270,7 @@ void prt_file_header::set_all_metadata( const particle_file_metadata& data ) {
 }
 
 namespace {
-void read_string( std::istream& in, char ( &outString )[32] ) {
+[[maybe_unused]] void read_string( std::istream& in, char ( &outString )[32] ) {
     in.getline( outString, 32, '\0' );
 
     if( !in )
@@ -290,7 +289,7 @@ inline frantic::tstring from_utf8( const char* szUtf8String ) {
 }
 #else
 // On non-Windows std::string is already UTF8 so do nothing.
-inline const std::string& from_utf8( const std::string& utf8String ) { return utf8String; }
+[[maybe_unused]] inline const std::string& from_utf8( const std::string& utf8String ) { return utf8String; }
 
 inline const char* from_utf8( const char* szUtf8String ) { // TODO: Might make sense to return std::string.
     return szUtf8String;
@@ -888,8 +887,8 @@ class auto_ostream : public std::ostream {
 
   public:
     explicit auto_ostream( std::streambuf* pImpl )
-        : m_streamBufImpl( pImpl )
-        , std::ostream( pImpl ) {}
+        : std::ostream( pImpl )
+        , m_streamBufImpl( pImpl ) {}
 
     static std::streambuf* create_wrapper_streambuf( FILE* f );
 };

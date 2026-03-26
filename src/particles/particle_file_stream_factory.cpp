@@ -4,6 +4,7 @@
 #include "stdafx.h"
 // clang-format on
 
+#include <boost/system/errc.hpp>
 #include <frantic/particles/particle_file_stream_factory.hpp>
 
 #include <boost/predef.h>
@@ -41,6 +42,7 @@
 #include <frantic/logging/progress_logger.hpp>
 
 #include <boost/filesystem/path.hpp>
+#include <boost/filesystem/exception.hpp>
 #include <boost/foreach.hpp>
 #include <boost/regex.hpp>
 #include <boost/system/error_code.hpp>
@@ -343,9 +345,11 @@ void particle_file_stream_factory_object::enable_prt2_saving( frantic::prtfile::
 
 void particle_file_stream_factory_object::set_temp_directory( const boost::filesystem::path& tempDir ) {
     if( !tempDir.empty() && ( !boost::filesystem::exists( tempDir ) || !boost::filesystem::is_directory( tempDir ) ) )
-        BOOST_THROW_EXCEPTION( boost::filesystem::filesystem_error(
-            "Invalid temp directory", tempDir,
-            boost::system::errc::make_error_code( boost::system::errc::not_a_directory ) ) );
+    BOOST_THROW_EXCEPTION( boost::filesystem::filesystem_error(
+        "Invalid temp directory",
+        tempDir,
+        boost::system::errc::make_error_code( boost::system::errc::not_a_directory )
+    ) );
 
     m_pImpl->m_tempDirectory = tempDir;
 }
@@ -778,7 +782,7 @@ boost::shared_ptr<streams::particle_ostream> particle_file_stream_factory_object
         if( enablePRT2Saving ) {
             boost::shared_ptr<prt2_particle_ostream> pResult;
             pResult.reset( new prt2_particle_ostream( file, particleChannelMap, particleChannelMapForFile,
-                                                      m_pImpl->m_compressionScheme, true, tempDirPath, &metadata,
+                                                      m_pImpl->m_compressionScheme, true, tempDirPath.native(), &metadata,
                                                       &channelMetadata, m_pImpl->m_desiredChunkSizeInBytes ) );
             return pResult;
         } else {
