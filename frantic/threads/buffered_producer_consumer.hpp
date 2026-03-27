@@ -2,41 +2,24 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 
-#pragma warning( push, 3 )
-#pragma warning( disable : 4706 4002 )
+#include <atomic>
+#include <exception>
+#include <memory>
+#include <stdexcept>
+#include <thread>
+#include <vector>
 
-#include <boost/exception/all.hpp>
-#include <boost/exception_ptr.hpp>
-#pragma warning( push, 3 )
-#include <boost/thread.hpp>
-#pragma warning( pop )
+#include <oneapi/tbb/concurrent_queue.h>
 
-#include <tbb/atomic.h>
-#include <tbb/concurrent_queue.h>
-#include <tbb/task_scheduler_init.h>
-
-#pragma warning( pop )
 
 namespace frantic {
 namespace threads {
 
-#pragma warning( push )
-#pragma warning( disable : 4127 )
+namespace detail {
 
-namespace {
-
-// Copy the exception message into this type because our current compiler does not provide the necessary support to
-// capture the original exception across threads. This handler will capture the msg of a std::exception derived
-// exception. NOTE: If capturing the exact type of some exceptions is important, make a catch handler above this that
-// can handle copying those specific exceptions.
-struct thread_exception : virtual boost::exception, virtual std::exception {
-    typedef boost::error_info<thread_exception, std::string> info_type;
-
-    virtual const char* what() const throw() {
-        if( const std::string* msg = boost::get_error_info<info_type>( *this ) )
-            return msg->c_str();
-        return "<unknown thread exception>";
-    }
+struct thread_exception : std::runtime_error {
+    explicit thread_exception( const std::string& msg )
+        : std::runtime_error( msg ) {}
 };
 
 } // namespace
@@ -54,7 +37,7 @@ class buffered_producer_consumer {
         buffer_type* item;
 
       public:
-        ptr_guard() { item = NULL; }
+        ptr_guard() { item = nullptr; }
         ~ptr_guard() {
             if( item )
                 delete item;
@@ -67,31 +50,28 @@ class buffered_producer_consumer {
         } // Returns a ref so this pointer can be set. Must not be called with item is non-NULL.
         inline buffer_type* release() {
             buffer_type* result = item;
-            item = NULL;
+            item = nullptr;
             return result;
         } // Releases ownership of the current item.
     };
 
     // A counter of the number of active threads. When it becomes zero, all producer threads have finished.
-    tbb::atomic<int> numThreadsRemaining;
+    std::atomic<int> numThreadsRemaining;
 
     // Will be atomically set to true when a thread has registered an exception.
-    tbb::atomic<bool> errorOccurred;
+    std::atomic<bool> errorOccurred;
 
-    // An exception ptr for transferring the exception (or more likely an approximation) to the main thread.
-    boost::exception_ptr error;
+    std::atomic<bool> stopRequested;
+
+    std::exception_ptr error;
 
     // A pair of queues for passing empty and full buffers between producers and the consumer. The producer threads will
     // be responsible for creating the initial buffers.
-    tbb::concurrent_queue<buffer_type*> emptyItems, fullItems;
+    oneapi::tbb::concurrent_queue<buffer_type*> emptyItems, fullItems;
 
     template <class T>
     inline static bool concurrent_queue_try_pop( tbb::concurrent_queue<T>& queue, T& outValue ) {
-#if TBB_VERSION_MAJOR < 3
-        return queue.pop_if_present( outValue );
-#else
         return queue.try_pop( outValue );
-#endif
     }
 
     /**
@@ -104,8 +84,6 @@ class buffered_producer_consumer {
             typedef typename ProducerConsumerModel::producer_instance producer_instance;
             producer_instance threadProd( *m_pcModel );
 
-            tbb::task_scheduler_init tsched;
-
             ptr_guard theItem;
 
             // Create an extra buffer for later use by this thread.
@@ -117,7 +95,9 @@ class buffered_producer_consumer {
             threadProd.init_buffer( theItem.get() );
 
             while( 1 ) {
-                boost::this_thread::interruption_point();
+                if( stopRequested.load( std::memory_order_relaxed ) ) {
+                    throw detail::thread_exception("worker interrupted" );
+                }
 
                 if( !threadProd.can_produce_more() ) {
                     // This thread should exit since there is no more data to produce. We may need to flush if our
@@ -137,8 +117,10 @@ class buffered_producer_consumer {
                     fullItems.push( theItem.release() );
 
                     while( !concurrent_queue_try_pop( emptyItems, theItem.get_ref() ) ) {
-                        boost::this_thread::interruption_point();
-                        boost::this_thread::yield();
+                        if( stopRequested.load( std::memory_order_relaxed ) ) {
+                            throw detail::thread_exception("worker interrupted" );
+                        }
+                        std::this_thread::yield();
                     }
 
                     threadProd.init_buffer( theItem.get() );
@@ -147,14 +129,12 @@ class buffered_producer_consumer {
                 // We have a non-full buffer so produce data to go into it.
                 threadProd.fill_buffer( theItem.get() );
             }
-        } catch( const boost::thread_interrupted& ) {
-            ; // Do nothing
-        } catch( const std::exception& e ) {
-
-            // Atomically determine if another thread has already thrown an exception, and if not store our exception.
-            // Otherwise ignore it in favor of the already stored exception.
-            if( errorOccurred.compare_and_swap( true, false ) == false )
-                error = boost::copy_exception( thread_exception() << thread_exception::info_type( e.what() ) );
+        } catch( ... ) {
+            bool expected = false;
+            if( errorOccurred.compare_exchange_strong( expected, true ) ) {
+                error = std::current_exception();
+                stopRequested.store( true, std::memory_order_relaxed );
+            }
         }
 
         --numThreadsRemaining;
@@ -164,19 +144,24 @@ class buffered_producer_consumer {
   private:
     ProducerConsumerModel* m_pcModel;
 
-    boost::thread_group m_threads;
+    std::vector<std::thread> m_threads;
 
   public:
-    buffered_producer_consumer() {
-        numThreadsRemaining = 0;
-        errorOccurred = false;
-    }
+    buffered_producer_consumer()
+    : numThreadsRemaining(0)
+    , errorOccurred(false)
+    , stopRequested(false)
+    , error() {}
 
     ~buffered_producer_consumer() {
-        m_threads.interrupt_all();
-        m_threads.join_all();
+        stopRequested.store( true, std::memory_order_relaxed );
+        for ( std::thread& t : m_threads ) {
+            if( t.joinable() ) {
+                t.join();
+            }
+        }
 
-        buffer_type* item;
+        buffer_type* item = nullptr;
         while( concurrent_queue_try_pop( emptyItems, item ) )
             delete item;
         while( concurrent_queue_try_pop( fullItems, item ) )
@@ -186,14 +171,19 @@ class buffered_producer_consumer {
     void reset( ProducerConsumerModel& pcModel, unsigned int numThreads = 0 ) {
         m_pcModel = &pcModel;
 
-        numThreads = std::max( 1u, numThreads == 0 ? boost::thread::hardware_concurrency() - 1u : numThreads );
+        numThreads = std::max( 1u, numThreads == 0 ? std::thread::hardware_concurrency() - 1u : numThreads );
 
         // Set the atomic counter to track the number of outstanding worker threads.
-        numThreadsRemaining = numThreads;
+        numThreadsRemaining = static_cast<int>( numThreads );
         errorOccurred = false;
+        stopRequested = false;
+        error = nullptr;
+        m_threads.clear();
+        m_threads.reserve( numThreads );
 
-        for( unsigned int i = 0; i < numThreads; ++i )
-            m_threads.create_thread( boost::bind( &buffered_producer_consumer::producer_fn, this ) );
+        for( unsigned int i = 0; i < numThreads; ++i ) {
+            m_threads.emplace_back( [this]() { producer_fn(); });
+        }
     }
 
     /**
@@ -212,34 +202,47 @@ class buffered_producer_consumer {
                     threadCons.do_idle_process();
 
                     while( !concurrent_queue_try_pop( fullItems, theItem.get_ref() ) ) {
-                        if( errorOccurred )
-                            throw boost::thread_interrupted(); // Can't throw this->error yet, since it may not be
-                                                               // finished being created. Throw this instead and sync
-                                                               // with all threads.
-                        if( numThreadsRemaining == 0 ) {
-                            if( concurrent_queue_try_pop(
-                                    fullItems,
-                                    theItem.get_ref() ) ) // Check again to make sure we didn't get an item before
-                                                          // #threads went to 0.
-                                break;
-                            return;
+                        if( errorOccurred.load( std::memory_order_relaxed ) ) {
+                            stopRequested.store( true, std::memory_order_relaxed );
+                            break;
                         }
-                        boost::this_thread::yield();
+                        if( numThreadsRemaining == 0 ) {
+                            if( concurrent_queue_try_pop( fullItems, theItem.get_ref() ) )
+                                break;
+                            goto done;
+                        }
+                        std::this_thread::yield();
+                    }
+
+                    if( errorOccurred.load( std::memory_order_relaxed ) && !theItem.get() ) {
+                        break;
                     }
                 }
 
                 threadCons.consume_buffer( theItem.get() );
-
                 emptyItems.push( theItem.release() );
             } while( untilDone );
-        } catch( const boost::thread_interrupted& ) {
-            m_threads.interrupt_all();
-            m_threads.join_all();
 
-            boost::rethrow_exception( error );
+    done:
+            stopRequested.store( true, std::memory_order_relaxed );
+
+            for( std::thread& t : m_threads ) {
+                if( t.joinable() ) {
+                    t.join();
+                }
+            }
+
+            if( error ) {
+                std::rethrow_exception( error );
+            }
         } catch( ... ) {
-            m_threads.interrupt_all();
-            m_threads.join_all();
+            stopRequested.store( true, std::memory_order_relaxed );
+
+            for( std::thread& t : m_threads ) {
+                if( t.joinable() ) {
+                    t.join();
+                }
+            }
 
             throw;
         }
@@ -251,36 +254,39 @@ class buffered_producer_consumer {
         std::unique_ptr<buffer_type> result;
 
         try {
-            buffer_type* theItem = NULL;
+            buffer_type* theItem = nullptr;
 
             if( waitForItem ) {
                 while( !concurrent_queue_try_pop( fullItems, theItem ) ) {
-                    if( errorOccurred )
-                        throw boost::thread_interrupted(); // Can't throw this->error yet, since it may not be finished
-                                                           // being created. Throw this instead and sync with all
-                                                           // threads.
+                    if( errorOccurred.load( std::memory_order_relaxed ) ) {
+                        stopRequested.store( true, std::memory_order_relaxed );
+                        break;
+                    }
                     if( numThreadsRemaining == 0 ) {
                         concurrent_queue_try_pop(
                             fullItems,
                             theItem ); // Check again to make sure we didn't get an item before #threads went to 0.
                         break;
                     }
-                    boost::this_thread::yield();
+                    std::this_thread::yield();
                 }
             } else if( !concurrent_queue_try_pop( fullItems, theItem ) && errorOccurred ) {
-                throw boost::thread_interrupted(); // Can't throw this->error yet, since it may not be finished being
-                                                   // created. Throw this instead and sync with all threads.
+                std::rethrow_exception( error );
             }
 
             result.reset( theItem );
-        } catch( const boost::thread_interrupted& ) {
-            m_threads.interrupt_all();
-            m_threads.join_all();
-
-            boost::rethrow_exception( error );
         } catch( ... ) {
-            m_threads.interrupt_all();
-            m_threads.join_all();
+            stopRequested.store( true, std::memory_order_relaxed );
+
+            for( std::thread& t : m_threads ) {
+                if( t.joinable() ) {
+                    t.join();
+                }
+            }
+
+            if( error ) {
+                std::rethrow_exception( error );
+            }
 
             throw;
         }
@@ -312,7 +318,6 @@ void do_buffered_producer_consumer( ProducerConsumerModel& pcModel, unsigned int
     theImpl.run();
 }
 
-#pragma warning( pop )
 
 } // namespace threads
 } // namespace frantic
