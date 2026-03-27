@@ -1,5 +1,6 @@
 { lib
 , stdenv
+, src
 , cmake
 , ninja
 , pkg-config
@@ -27,11 +28,11 @@ let
   buildWithE57 = false;
   buildWithLz4 = false;
 in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   pname = "thinkboxlibrary";
   version = "0.1.0";
 
-  src = ./.;
+  inherit src;
 
   nativeBuildInputs = [
     cmake

@@ -16,6 +16,7 @@
         llvm = pkgs.llvmPackages_latest;
         thinkboxlibrary = pkgs.callPackage ./package.nix {
           stdenv = pkgs.clangStdenv;
+          src = self;
         };
       in {
         packages = {
@@ -33,6 +34,7 @@
             pkgs.ninja
             pkgs.pkg-config
             pkgs.clang-tools
+            pkgs.just
           ];
 
           shellHook = ''
