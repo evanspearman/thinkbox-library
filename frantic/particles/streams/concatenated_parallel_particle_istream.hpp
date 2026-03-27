@@ -8,6 +8,7 @@
 
 #include <tbb/spin_mutex.h>
 
+#include <atomic>
 #include <memory>
 
 namespace frantic {
@@ -89,7 +90,7 @@ class concatenated_parallel_particle_istream : public particle_istream {
     boost::int64_t m_currentParticle;
     boost::int64_t m_totalProgressParticles;
 
-    tbb::atomic<boost::int64_t> m_currentProgressParticle;
+    std::atomic<boost::int64_t> m_currentProgressParticle;
 
     frantic::channels::channel_map m_nativeMap, m_channelMap;
 
