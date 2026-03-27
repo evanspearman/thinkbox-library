@@ -211,7 +211,7 @@ write_basic_package_version_file(
 
 install(
     FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/ThinkboxLibraryConfig.cmake"
-        "${CMAKE_CURRENT_BINARY_DIR}/ThinkboxLibraryConfigVersion.cmake"
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/ThinkboxLibrary"
+        "${CMAKE_CURRENT_BINARY_DIR}/thinkboxlibraryConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/thinkboxlibraryConfigVersion.cmake"
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/thinkboxlibrary"
 )
