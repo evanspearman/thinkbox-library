@@ -170,15 +170,16 @@ endif()
 
 install(
     TARGETS thinkboxlibrary
-    EXPORT ThinkboxLibraryTargets
+    EXPORT thinkboxlibraryTargets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
 install(
     DIRECTORY frantic/
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/frantic
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     FILES_MATCHING
         PATTERN "*.h"
         PATTERN "*.hpp"
@@ -190,20 +191,20 @@ install(
 )
 
 install(
-    EXPORT ThinkboxLibraryTargets
-    FILE ThinkboxLibraryTargets.cmake
-    NAMESPACE Thinkbox::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ThinkboxLibrary
+    EXPORT thinkboxlibraryTargets
+    FILE thinkboxlibraryTargets.cmake
+    NAMESPACE thinkboxlibrary::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/thinkboxlibrary
 )
 
 configure_package_config_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ThinkboxLibraryConfig.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/ThinkboxLibraryConfig.cmake"
-    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/ThinkboxLibrary"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/thinkboxlibraryConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/thinkboxlibraryConfig.cmake"
+    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/thinkboxlibrary"
 )
 
 write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/ThinkboxLibraryConfigVersion.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/thinkboxlibraryConfigVersion.cmake"
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion
 )
