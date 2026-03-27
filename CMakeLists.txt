@@ -178,7 +178,7 @@ install(
 )
 
 install(
-    DIRECTORY frantic/
+    DIRECTORY frantic
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     FILES_MATCHING
         PATTERN "*.h"
