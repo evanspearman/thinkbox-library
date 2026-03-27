@@ -31,24 +31,55 @@
 #include "stdafx.h"
 // clang-format on
 
-#include <boost/filesystem/operations.hpp>
-#include <stdio.h>
-
+#include <cstdio>
+#include <filesystem>
 #include <gtest/gtest.h>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
+
+namespace {
+
+bool try_set_working_directory_near_executable( const char* argv0 ) {
+    if( !argv0 || !*argv0 ) {
+        return false;
+    }
+
+    std::error_code ec;
+    fs::path exePath = fs::absolute( argv0, ec );
+    if( ec ) {
+        return false;
+    }
+
+    fs::path dir = exePath.parent_path();
+
+    // Walk upward looking for UnitTests.
+    while( true ) {
+        const fs::path unitTestsDir = dir / "UnitTests";
+        if( fs::is_directory( unitTestsDir, ec ) && !ec ) {
+            fs::current_path( unitTestsDir, ec );
+            return !ec;
+        }
+
+        const fs::path parent = dir.parent_path();
+        if( parent == dir ) {
+            break;
+        }
+        dir = parent;
+    }
+
+    return false;
+}
+
+} // namespace
 
 GTEST_API_ int main( int argc, char** argv ) {
-    printf( "Running main() from gtest_main.cc\n" );
+    std::printf( "Running main() from gtest_main.cc\n" );
+    std::fflush( stdout );
 
-    // Search up the directory tree until we find FranticLibrary,
-    // then descend into FranticLibrary/UnitTests. This will run
-    // the tests in the correct directory from various build directory
-    // choices.
-    while( !fs::is_directory( "ThinkboxFranticLibrary" ) ) {
-        fs::current_path( ".." );
+    if( !try_set_working_directory_near_executable( argc > 0 ? argv[0] : nullptr ) ) {
+        std::fprintf( stderr, "Failed to locate UnitTests directory\n" );
+        return 1;
     }
-    fs::current_path( "ThinkboxFranticLibrary/UnitTests" );
 
     testing::InitGoogleTest( &argc, argv );
     return RUN_ALL_TESTS();
