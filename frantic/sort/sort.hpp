@@ -6,7 +6,7 @@
 
 #include <boost/smart_ptr.hpp>
 
-#include <tbb/parallel_sort.h>
+#include <oneapi/tbb/task_group.h>
 
 #include <atomic>
 #include <thread>
@@ -226,9 +226,9 @@ class sort_task {
     }
 
     void run_impl( const std::pair<RandIter, RandIter>& range, oneapi::tbb::task_group& tg ) const {
-        std::size_t rangeSize = ( m_range.second - m_range.first );
+        std::size_t rangeSize = ( range.second - range.first );
         if( rangeSize < PARALLEL_CUTOFF ) {
-            frantic::sort::sort<RandIter, Pred, ValueType, RandIterTraits>( m_range.first, m_range.second, m_pred,
+            frantic::sort::sort<RandIter, Pred, ValueType, RandIterTraits>( range.first, range.second, m_pred,
                                                                             m_elementSize );
 
             add_progress( rangeSize );
@@ -236,14 +236,14 @@ class sort_task {
             return;
         }
         std::pair<std::size_t, std::size_t> sizes =
-            frantic::sort::partition<RandIter, Pred, ValueType, RandIterTraits>( m_range.first, m_range.second,
+            frantic::sort::partition<RandIter, Pred, ValueType, RandIterTraits>( range.first, range.second,
                                                                                  m_pred, m_elementSize );
 
         RandIter leftBegin = range.first;
         RandIter leftEnd = range.first + sizes.first;
         RandIter rightBegin = range.second - sizes.second;
         RandIter rightEnd = range.second;
-        std::size_t pivotElementCount = static_cast<std::size_t>( rightBegin - rightEnd);
+        std::size_t pivotElementCount = static_cast<std::size_t>( rightBegin - leftEnd );
         add_progress( pivotElementCount );
 
         tg.run( [this, rightBegin, rightEnd, &tg]() {
