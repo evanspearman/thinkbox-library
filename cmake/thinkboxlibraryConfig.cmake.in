@@ -4,7 +4,7 @@ include(CMakeFindDependencyMacro)
 
 find_dependency(PkgConfig)
 pkg_check_modules(LIBB2 REQUIRED IMPORTED_TARGET libb2)
-find_dependency(Boost)
+find_package(Boost REQUIRED CONFIG COMPONENTS filesystem thread program_options)
 find_dependency(BZip2)
 find_dependency(Eigen3 CONFIG)
 find_dependency(glog)
